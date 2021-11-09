@@ -7,7 +7,11 @@ use near_sdk::AccountId;
 
 #[test]
 fn test_upgrade() {
+<<<<<<< HEAD
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_1_wasm_bytes());
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")

@@ -1,6 +1,10 @@
 [package]
 name = "contract"
+<<<<<<< HEAD
 version = "0.3.0"
+=======
+version = "0.2.0"
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

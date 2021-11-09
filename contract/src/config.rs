@@ -27,6 +27,7 @@ pub struct Config {
     /// delay the price updates are due to the shard congestion.
     /// This parameter can be updated in the future by the owner.
     pub maximum_staleness_duration_sec: DurationSec,
+<<<<<<< HEAD
 
     /// The minimum duration to stake booster token in seconds.
     pub minimum_staking_duration_sec: DurationSec,
@@ -51,6 +52,8 @@ impl Config {
             "xBooster multiplier should be no less than 100%"
         );
     }
+=======
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 }
 
 impl Contract {
