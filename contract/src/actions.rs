@@ -1,7 +1,5 @@
 use crate::*;
 
-const MAX_NUM_ASSETS: usize = 10;
-
 #[derive(Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Serialize))]
 #[serde(crate = "near_sdk::serde")]
@@ -9,10 +7,10 @@ pub struct AssetAmount {
     pub token_id: TokenId,
     /// The amount of tokens intended to be used for the action.
     /// If `None`, then the maximum amount will be tried.
-    pub amount: Option<WrappedBalance>,
+    pub amount: Option<U128>,
     /// The maximum amount of tokens that can be used for the action.
     /// If `None`, then the maximum `available` amount will be used.
-    pub max_amount: Option<WrappedBalance>,
+    pub max_amount: Option<U128>,
 }
 
 #[derive(Deserialize)]
@@ -25,7 +23,7 @@ pub enum Action {
     Borrow(AssetAmount),
     Repay(AssetAmount),
     Liquidate {
-        account_id: ValidAccountId,
+        account_id: AccountId,
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
     },
@@ -113,8 +111,7 @@ impl Contract {
                     out_assets,
                 } => {
                     assert_ne!(
-                        account_id,
-                        liquidation_account_id.as_ref(),
+                        account_id, &liquidation_account_id,
                         "Can't liquidate yourself"
                     );
                     assert!(!in_assets.is_empty() && !out_assets.is_empty());
@@ -122,7 +119,7 @@ impl Contract {
                         account_id,
                         account,
                         &prices,
-                        liquidation_account_id.as_ref(),
+                        &liquidation_account_id,
                         in_assets,
                         out_assets,
                     );
@@ -130,13 +127,16 @@ impl Contract {
             }
         }
         if need_number_check {
-            assert!(account.collateral.len() + account.borrowed.len() <= MAX_NUM_ASSETS);
+            assert!(
+                account.collateral.len() + account.borrowed.len()
+                    <= self.internal_config().max_num_assets as _
+            );
         }
         if need_risk_check {
             assert!(self.compute_max_discount(account, &prices) == BigDecimal::zero());
         }
 
-        self.internal_account_apply_affected_farms(account, true);
+        self.internal_account_apply_affected_farms(account);
     }
 
     pub fn internal_deposit(
@@ -335,12 +335,12 @@ impl Contract {
         let mut collateral_taken_sum = BigDecimal::zero();
 
         for asset_amount in in_assets {
-            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
             liquidation_account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
             let mut account_asset = account.internal_unwrap_asset(&asset_amount.token_id);
             let amount =
                 self.internal_repay(&mut account_asset, &mut liquidation_account, &asset_amount);
             account.internal_set_asset(&asset_amount.token_id, account_asset);
+            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
 
             borrowed_repaid_sum = borrowed_repaid_sum
                 + BigDecimal::from_balance_price(
@@ -383,7 +383,7 @@ impl Contract {
             "The liquidation amount is too large. The liquidation account should stay in risk"
         );
 
-        self.internal_account_apply_affected_farms(&mut liquidation_account, true);
+        self.internal_account_apply_affected_farms(&mut liquidation_account);
         self.internal_set_account(liquidation_account_id, liquidation_account);
 
         log!(
