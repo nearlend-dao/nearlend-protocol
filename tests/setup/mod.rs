@@ -19,15 +19,20 @@ use test_oracle::ContractContract as OracleContract;
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
 <<<<<<< HEAD
+<<<<<<< HEAD
     BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
 =======
     BURROWLAND_0_1_1_WASM_BYTES => "res/burrowland_0.1.1.wasm",
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+    BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_2_0_WASM_BYTES
@@ -35,6 +40,10 @@ pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
 pub fn burrowland_0_1_1_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_1_1_WASM_BYTES
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_2_0_WASM_BYTES
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 }
 
 pub const NEAR: &str = "near";
@@ -151,11 +160,17 @@ impl Env {
                     maximum_recency_duration_sec: 90,
                     maximum_staleness_duration_sec: 15,
 <<<<<<< HEAD
+<<<<<<< HEAD
                     minimum_staking_duration_sec: 2678400,
                     maximum_staking_duration_sec: 31536000,
                     x_booster_multiplier_at_maximum_staking_duration: 40000,
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+                    minimum_staking_duration_sec: 2678400,
+                    maximum_staking_duration_sec: 31536000,
+                    x_booster_multiplier_at_maximum_staking_duration: 40000,
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
                 }
             )
         );

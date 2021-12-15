@@ -1,10 +1,14 @@
 [package]
 name = "contract"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+version = "0.3.0"
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

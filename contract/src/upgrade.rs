@@ -21,6 +21,9 @@ impl Contract {
             /// The number of decimals of the booster fungible token.
             pub booster_decimals: u8,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 
             /// The total number of different assets
             pub max_num_assets: u32,
@@ -33,8 +36,11 @@ impl Contract {
             /// delay the price updates are due to the shard congestion.
             /// This parameter can be updated in the future by the owner.
             pub maximum_staleness_duration_sec: DurationSec,
+<<<<<<< HEAD
 =======
 >>>>>>> 3879cfb (Missing files)
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
         }
 
         #[derive(BorshDeserialize)]
@@ -62,11 +68,17 @@ impl Contract {
             booster_token_id,
             booster_decimals,
 <<<<<<< HEAD
+<<<<<<< HEAD
             max_num_assets,
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
 =======
 >>>>>>> 3879cfb (Missing files)
+=======
+            max_num_assets,
+            maximum_recency_duration_sec,
+            maximum_staleness_duration_sec,
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
         } = old_config.get().expect("Failed to read old config");
 
         let new_config = Config {
@@ -75,17 +87,23 @@ impl Contract {
             booster_token_id,
             booster_decimals,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
             max_num_assets,
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
             minimum_staking_duration_sec: 2678400,
             maximum_staking_duration_sec: 31536000,
             x_booster_multiplier_at_maximum_staking_duration: 40000,
+<<<<<<< HEAD
 =======
             max_num_assets: 10,
             maximum_recency_duration_sec: 90,
             maximum_staleness_duration_sec: 15,
 >>>>>>> 3879cfb (Missing files)
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
         };
 
         Self {

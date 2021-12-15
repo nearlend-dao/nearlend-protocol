@@ -28,6 +28,9 @@ pub struct Config {
     /// This parameter can be updated in the future by the owner.
     pub maximum_staleness_duration_sec: DurationSec,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     /// The minimum duration to stake booster token in seconds.
     pub minimum_staking_duration_sec: DurationSec,
@@ -52,8 +55,11 @@ impl Config {
             "xBooster multiplier should be no less than 100%"
         );
     }
+<<<<<<< HEAD
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+>>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 }
 
 impl Contract {
