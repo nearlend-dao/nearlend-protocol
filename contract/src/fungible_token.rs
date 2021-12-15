@@ -59,12 +59,36 @@ impl FungibleTokenReceiver for Contract {
             }
         };
 
+<<<<<<< HEAD
         let mut account = self.internal_unwrap_account(&sender_id);
         account.add_affected_farm(FarmId::Supplied(token_id.clone()));
         self.internal_deposit(&mut account, &token_id, amount);
         log!("Account {} deposits {} of {}", sender_id, amount, token_id);
         self.internal_execute(&sender_id, &mut account, actions, Prices::new());
         self.internal_set_account(&sender_id, account);
+=======
+<<<<<<< HEAD
+        let mut account = self.internal_unwrap_account(sender_id.as_ref());
+        account.add_affected_farm(FarmId::Supplied(token_id.clone()));
+        self.internal_deposit(&mut account, &token_id, amount);
+        log!("Account {} deposits {} of {}", sender_id, amount, token_id);
+        self.internal_execute(sender_id.as_ref(), &mut account, actions, Prices::new());
+        self.internal_set_account(sender_id.as_ref(), account);
+=======
+        let (mut account, mut storage) = self.internal_unwrap_account_with_storage(&sender_id);
+        account.add_affected_farm(FarmId::Supplied(token_id.clone()));
+        self.internal_deposit(&mut account, &token_id, amount);
+        log!("Account {} deposits {} of {}", sender_id, amount, token_id);
+        self.internal_execute(
+            &sender_id,
+            &mut account,
+            &mut storage,
+            actions,
+            Prices::new(),
+        );
+        self.internal_set_account(&sender_id, account, storage);
+>>>>>>> 005b54c (Update to SDK 4.0.0)
+>>>>>>> 1d7cd75 (Update to SDK 4.0.0)
 
         PromiseOrValue::Value(U128(0))
     }

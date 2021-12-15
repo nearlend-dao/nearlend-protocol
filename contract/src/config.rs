@@ -123,12 +123,15 @@ impl Contract {
         asset_config.assert_valid();
         self.assert_owner();
         let mut asset = self.internal_unwrap_asset(&token_id);
+<<<<<<< HEAD
         if asset.config.extra_decimals != asset_config.extra_decimals {
             assert!(
                 asset.borrowed.balance == 0 && asset.supplied.balance == 0 && asset.reserved == 0,
                 "Can't change extra decimals if any of the balances are not 0"
             );
         }
+=======
+>>>>>>> 1d7cd75 (Update to SDK 4.0.0)
         asset.config = asset_config;
         self.internal_set_asset(&token_id, asset);
     }

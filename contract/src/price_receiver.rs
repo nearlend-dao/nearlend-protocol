@@ -39,9 +39,21 @@ impl OraclePriceReceiver for Contract {
             PriceReceiverMsg::Execute { actions } => actions,
         };
 
+<<<<<<< HEAD
         let mut account = self.internal_unwrap_account(&sender_id);
         self.validate_price_data(&data);
         self.internal_execute(&sender_id, &mut account, actions, data.into());
         self.internal_set_account(&sender_id, account);
+=======
+<<<<<<< HEAD
+        let mut account = self.internal_unwrap_account(sender_id.as_ref());
+        self.internal_execute(sender_id.as_ref(), &mut account, actions, data.into());
+        self.internal_set_account(sender_id.as_ref(), account);
+=======
+        let (mut account, mut storage) = self.internal_unwrap_account_with_storage(&sender_id);
+        self.internal_execute(&sender_id, &mut account, &mut storage, actions, data.into());
+        self.internal_set_account(&sender_id, account, storage);
+>>>>>>> 005b54c (Update to SDK 4.0.0)
+>>>>>>> 1d7cd75 (Update to SDK 4.0.0)
     }
 }
