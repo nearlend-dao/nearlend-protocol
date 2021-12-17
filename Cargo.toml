@@ -1,6 +1,10 @@
 [package]
 name = "burrowland"
+<<<<<<< HEAD
 version = "0.3.0"
+=======
+version = "0.1.1"
+>>>>>>> d7df3ed (Add contract upgrade integration test)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

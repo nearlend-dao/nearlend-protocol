@@ -18,6 +18,7 @@ use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
     BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
@@ -27,11 +28,15 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 =======
     BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+    BURROWLAND_0_1_0_WASM_BYTES => "res/burrowland_0.1.0.wasm",
+>>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
 pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
@@ -44,6 +49,10 @@ pub fn burrowland_0_1_1_wasm_bytes() -> &'static [u8] {
 pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_2_0_WASM_BYTES
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+pub fn burrowland_0_1_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_1_0_WASM_BYTES
+>>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
 }
 
 pub const NEAR: &str = "near";
@@ -219,12 +228,15 @@ impl Env {
             .user_account
             .create_transaction(a(BURROWLAND_ID))
             .deploy_contract(BURROWLAND_WASM_BYTES.to_vec())
+<<<<<<< HEAD:tests/setup/mod.rs
             .function_call(
                 "migrate_state".to_string(),
                 b"{}".to_vec(),
                 DEFAULT_GAS.0,
                 0,
             )
+=======
+>>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
             .submit()
             .assert_success();
     }
@@ -684,7 +696,10 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
 pub fn basic_setup() -> (Env, Tokens, Users) {
     basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
 }
+<<<<<<< HEAD:tests/setup/mod.rs
 
 pub fn sec_to_nano(sec: u32) -> u64 {
     u64::from(sec) * 10u64.pow(9)
 }
+=======
+>>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
