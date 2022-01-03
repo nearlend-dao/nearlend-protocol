@@ -335,6 +335,7 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -342,6 +343,9 @@ version = "0.1.1"
 =======
 version = "0.2.0"
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+version = "0.3.0"
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 dependencies = [
  "approx",
  "common",
@@ -511,6 +515,7 @@ name = "contract"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
@@ -521,6 +526,9 @@ version = "0.3.0"
 =======
 version = "0.2.0"
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+version = "0.3.0"
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 dependencies = [
  "common",
  "near-contract-standards",

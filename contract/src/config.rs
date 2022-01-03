@@ -30,8 +30,11 @@ pub struct Config {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     /// The minimum duration to stake booster token in seconds.
     pub minimum_staking_duration_sec: DurationSec,
@@ -57,12 +60,15 @@ impl Config {
         );
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 }
 
 impl Contract {

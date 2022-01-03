@@ -19,6 +19,7 @@ use test_oracle::ContractContract as OracleContract;
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -35,11 +36,15 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 =======
     BURROWLAND_0_1_1_WASM_BYTES => "res/burrowland_0.1.1.wasm",
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+    BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
@@ -62,6 +67,10 @@ pub fn burrowland_0_1_0_wasm_bytes() -> &'static [u8] {
 pub fn burrowland_0_1_1_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_1_1_WASM_BYTES
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_2_0_WASM_BYTES
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 }
 
 pub const NEAR: &str = "near";
@@ -180,6 +189,7 @@ impl Env {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     minimum_staking_duration_sec: 2678400,
                     maximum_staking_duration_sec: 31536000,
                     x_booster_multiplier_at_maximum_staking_duration: 40000,
@@ -192,6 +202,11 @@ impl Env {
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+                    minimum_staking_duration_sec: 2678400,
+                    maximum_staking_duration_sec: 31536000,
+                    x_booster_multiplier_at_maximum_staking_duration: 40000,
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
                 }
             )
         );
@@ -714,10 +729,16 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
 pub fn basic_setup() -> (Env, Tokens, Users) {
     basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
 }
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 
 pub fn sec_to_nano(sec: u32) -> u64 {
     u64::from(sec) * 10u64.pow(9)
 }
+<<<<<<< HEAD
 =======
 >>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)

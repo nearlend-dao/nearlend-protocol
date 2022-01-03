@@ -2,12 +2,16 @@ mod setup;
 
 use crate::setup::*;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 use contract::{AccountFarmView, AssetView};
 use near_sdk::serde::Deserialize;
 use near_sdk::AccountId;
 
 #[test]
 fn test_upgrade() {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
@@ -27,6 +31,9 @@ fn test_upgrade() {
 =======
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_1_wasm_bytes());
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -36,6 +43,9 @@ fn test_upgrade() {
     assert_eq!(asset.supplied.balance, amount);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
     #[derive(Debug, Deserialize)]
     #[serde(crate = "near_sdk::serde")]
     pub struct AccountDetailedViewV020 {
@@ -52,9 +62,12 @@ fn test_upgrade() {
         .unwrap_json();
     let account = account.unwrap();
 
+<<<<<<< HEAD
 =======
     let account = e.get_account(&users.alice);
 >>>>>>> d7df3ed (Add contract upgrade integration test)
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
     assert_eq!(account.supplied[0].balance, amount);
     assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
 

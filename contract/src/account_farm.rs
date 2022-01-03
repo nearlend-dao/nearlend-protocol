@@ -209,12 +209,16 @@ impl Contract {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
         account
             .affected_farms
             .extend(account.get_all_potential_farms());
         self.internal_account_apply_affected_farms(&mut account);
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 =======
@@ -224,6 +228,8 @@ impl Contract {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
         self.internal_set_account(&account_id, account);
     }
 }
