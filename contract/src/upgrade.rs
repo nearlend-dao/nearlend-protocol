@@ -22,6 +22,7 @@ impl Contract {
             pub booster_decimals: u8,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 
@@ -41,6 +42,8 @@ impl Contract {
 >>>>>>> 3879cfb (Missing files)
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> d2d0c2d (Missing files)
         }
 
         #[derive(BorshDeserialize)]
@@ -69,6 +72,7 @@ impl Contract {
             booster_decimals,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             max_num_assets,
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
@@ -79,6 +83,8 @@ impl Contract {
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> d2d0c2d (Missing files)
         } = old_config.get().expect("Failed to read old config");
 
         let new_config = Config {
@@ -86,6 +92,7 @@ impl Contract {
             owner_id,
             booster_token_id,
             booster_decimals,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -104,6 +111,11 @@ impl Contract {
 >>>>>>> 3879cfb (Missing files)
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+            max_num_assets: 10,
+            maximum_recency_duration_sec: 90,
+            maximum_staleness_duration_sec: 15,
+>>>>>>> d2d0c2d (Missing files)
         };
 
         Self {
