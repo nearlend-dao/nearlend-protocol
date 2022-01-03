@@ -334,10 +334,14 @@ checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 [[package]]
 name = "burrowland"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
 >>>>>>> d7df3ed (Add contract upgrade integration test)
+=======
+version = "0.2.0"
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 dependencies = [
  "approx",
  "common",
@@ -506,6 +510,7 @@ checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 name = "contract"
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
@@ -513,6 +518,9 @@ version = "0.2.0"
 =======
 version = "0.3.0"
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+version = "0.2.0"
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 dependencies = [
  "common",
  "near-contract-standards",

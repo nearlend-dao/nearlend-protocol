@@ -208,6 +208,7 @@ impl Contract {
         let mut account = self.internal_unwrap_account(&account_id);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
         account
@@ -216,6 +217,8 @@ impl Contract {
         self.internal_account_apply_affected_farms(&mut account);
 <<<<<<< HEAD
 =======
+=======
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
         account.add_all_affected_farms();
         self.internal_account_apply_affected_farms(&mut account, false);
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)

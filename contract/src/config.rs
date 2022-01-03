@@ -29,6 +29,7 @@ pub struct Config {
     pub maximum_staleness_duration_sec: DurationSec,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 
@@ -60,6 +61,8 @@ impl Config {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 }
 
 impl Contract {
@@ -124,14 +127,20 @@ impl Contract {
         self.assert_owner();
         let mut asset = self.internal_unwrap_asset(&token_id);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
         if asset.config.extra_decimals != asset_config.extra_decimals {
             assert!(
                 asset.borrowed.balance == 0 && asset.supplied.balance == 0 && asset.reserved == 0,
                 "Can't change extra decimals if any of the balances are not 0"
             );
         }
+<<<<<<< HEAD
 =======
 >>>>>>> 1d7cd75 (Update to SDK 4.0.0)
+=======
+>>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
         asset.config = asset_config;
         self.internal_set_asset(&token_id, asset);
     }
