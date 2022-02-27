@@ -1732,6 +1732,7 @@ dependencies = [
  "near-primitives-core 0.4.0",
  "near-rpc-error-macro 0.1.0",
  "near-vm-errors 4.0.0-pre.1",
+<<<<<<< HEAD
  "num-rational",
  "primitive-types 0.9.1",
  "rand 0.7.3",
@@ -1764,6 +1765,40 @@ dependencies = [
  "near-rpc-error-macro 0.10.0",
  "near-vm-errors 0.10.0",
  "num-rational",
+=======
+ "num-rational",
+ "primitive-types 0.9.1",
+ "rand 0.7.3",
+ "reed-solomon-erasure",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "smart-default",
+ "validator",
+]
+
+[[package]]
+name = "near-primitives"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04d93aaf84ad4f5ccf780d8a0029c6fb636a2e6c1ddb3c772dee4686529e30a8"
+dependencies = [
+ "base64 0.13.0",
+ "borsh 0.9.2",
+ "bs58",
+ "byteorder",
+ "bytesize",
+ "chrono",
+ "derive_more",
+ "easy-ext",
+ "hex",
+ "near-crypto 0.10.0",
+ "near-primitives-core 0.10.0",
+ "near-rpc-error-macro 0.10.0",
+ "near-vm-errors 0.10.0",
+ "num-rational",
+>>>>>>> 005b54c (Update to SDK 4.0.0)
  "primitive-types 0.10.1",
  "rand 0.7.3",
  "reed-solomon-erasure",
@@ -1784,7 +1819,10 @@ dependencies = [
  "base64 0.13.0",
  "borsh 0.8.2",
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 005b54c (Update to SDK 4.0.0)
  "bs58",
  "derive_more",
  "hex",
@@ -1803,12 +1841,16 @@ checksum = "4d88b2b0f418c1174214fb51106c90251f61ecfe4c7063f149c2e199ec2850fd"
 dependencies = [
  "base64 0.11.0",
  "borsh 0.9.2",
+<<<<<<< HEAD
 >>>>>>> 1d7cd75 (Update to SDK 4.0.0)
+=======
+>>>>>>> 005b54c (Update to SDK 4.0.0)
  "bs58",
  "derive_more",
  "hex",
  "lazy_static",
  "near-account-id",
+<<<<<<< HEAD
  "num-rational",
  "serde",
  "serde_json",
@@ -1828,6 +1870,8 @@ dependencies = [
  "hex",
  "lazy_static",
  "near-account-id",
+=======
+>>>>>>> 005b54c (Update to SDK 4.0.0)
  "num-rational",
  "serde",
  "serde_json",
@@ -2022,7 +2066,31 @@ dependencies = [
  "borsh 0.8.2",
  "hex",
  "near-rpc-error-macro 0.1.0",
+<<<<<<< HEAD
  "serde",
+]
+
+[[package]]
+name = "near-vm-logic"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c06b3cb3ccf0423a9ba6908ccf07abe19c3c34319af200c733f34b7ac5af0ab"
+dependencies = [
+ "base64 0.13.0",
+ "borsh 0.9.2",
+ "bs58",
+ "byteorder",
+ "near-account-id",
+ "near-crypto 0.10.0",
+ "near-primitives 0.10.0",
+ "near-primitives-core 0.10.0",
+ "near-vm-errors 0.10.0",
+ "ripemd160",
+=======
+>>>>>>> 005b54c (Update to SDK 4.0.0)
+ "serde",
+ "sha2",
+ "sha3",
 ]
 
 [[package]]

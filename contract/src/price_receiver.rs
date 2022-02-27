@@ -41,6 +41,7 @@ impl OraclePriceReceiver for Contract {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         let mut account = self.internal_unwrap_account(&sender_id);
         self.validate_price_data(&data);
         self.internal_execute(&sender_id, &mut account, actions, data.into());
@@ -67,5 +68,10 @@ impl OraclePriceReceiver for Contract {
         self.internal_set_account(&sender_id, account);
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+        let (mut account, mut storage) = self.internal_unwrap_account_with_storage(&sender_id);
+        self.internal_execute(&sender_id, &mut account, &mut storage, actions, data.into());
+        self.internal_set_account(&sender_id, account, storage);
+>>>>>>> 005b54c (Update to SDK 4.0.0)
     }
 }

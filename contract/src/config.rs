@@ -136,6 +136,7 @@ impl Contract {
         let mut asset = self.internal_unwrap_asset(&token_id);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
         if asset.config.extra_decimals != asset_config.extra_decimals {
@@ -149,6 +150,8 @@ impl Contract {
 >>>>>>> 1d7cd75 (Update to SDK 4.0.0)
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+>>>>>>> 005b54c (Update to SDK 4.0.0)
         asset.config = asset_config;
         self.internal_set_asset(&token_id, asset);
     }

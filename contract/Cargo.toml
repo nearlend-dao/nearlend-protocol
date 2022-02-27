@@ -30,8 +30,12 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 near-sdk = "=4.0.0-pre.7"
 near-contract-standards = "=4.0.0-pre.7"
+<<<<<<< HEAD
 near-sys = "=0.1"
 uint = { version = "=0.9.0", default-features = false }
+=======
+uint = { version = "0.9.0", default-features = false }
+>>>>>>> 005b54c (Update to SDK 4.0.0)
 common = { path = "../common/" }
 once_cell = "=1.8.0"
 
