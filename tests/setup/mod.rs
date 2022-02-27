@@ -21,6 +21,7 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -40,11 +41,16 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 =======
     BURROWLAND_0_2_0_WASM_BYTES => "res/burrowland_0.2.0.wasm",
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+    BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
+    BURROWLAND_0_4_0_FAKE_WASM_BYTES => "res/burrowland_0.4.0-fake.wasm",
+>>>>>>> b9665e0 (Add remote upgrade functionality by owner)
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
@@ -72,6 +78,18 @@ pub fn burrowland_0_1_1_wasm_bytes() -> &'static [u8] {
 pub fn burrowland_0_2_0_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_2_0_WASM_BYTES
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+pub fn burrowland_0_3_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_3_0_WASM_BYTES
+}
+
+pub fn burrowland_0_4_0_fake_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_4_0_FAKE_WASM_BYTES
+}
+
+pub fn burrowland_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_WASM_BYTES
+>>>>>>> b9665e0 (Add remote upgrade functionality by owner)
 }
 
 pub const NEAR: &str = "near";
@@ -255,7 +273,7 @@ impl Env {
         Self::init_with_contract(&BURROWLAND_WASM_BYTES)
     }
 
-    pub fn redeploy_latest(&self) {
+    pub fn redeploy_latest_by_key(&self) {
         self.contract
             .user_account
             .create_transaction(a(BURROWLAND_ID))
@@ -277,6 +295,13 @@ impl Env {
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
             .submit()
             .assert_success();
+    }
+
+    pub fn deploy_contract_by_owner(&self, contract_bytes: &[u8]) -> ExecutionResult {
+        self.owner
+            .create_transaction(a(BURROWLAND_ID))
+            .function_call("upgrade".to_string(), contract_bytes.to_vec(), MAX_GAS.0, 0)
+            .submit()
     }
 
     pub fn setup_assets(&self, tokens: &Tokens) {

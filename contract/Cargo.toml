@@ -4,6 +4,7 @@ name = "contract"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
@@ -17,6 +18,9 @@ version = "0.2.0"
 =======
 version = "0.3.0"
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+version = "0.4.0"
+>>>>>>> b9665e0 (Add remote upgrade functionality by owner)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 
@@ -26,9 +30,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 near-sdk = "=4.0.0-pre.7"
 near-contract-standards = "=4.0.0-pre.7"
-uint = { version = "0.9.0", default-features = false }
+near-sys = "=0.1"
+uint = { version = "=0.9.0", default-features = false }
 common = { path = "../common/" }
-once_cell = "1.8.0"
+once_cell = "=1.8.0"
 
 [dev-dependencies]
 rand = "0.8"
