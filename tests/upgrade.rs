@@ -4,6 +4,7 @@ use crate::setup::*;
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 use contract::{AccountFarmView, AssetView};
@@ -54,6 +55,12 @@ fn test_version() {
 #[test]
 fn test_upgrade_with_private_key() {
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_3_0_wasm_bytes());
+=======
+
+#[test]
+fn test_upgrade() {
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_0_wasm_bytes());
+>>>>>>> 775689c (Add contract upgrade integration test)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -62,6 +69,7 @@ fn test_upgrade_with_private_key() {
     let asset = e.get_asset(&tokens.wnear);
     assert_eq!(asset.supplied.balance, amount);
 
+<<<<<<< HEAD
     // The version is not available
     assert!(e
         .near
@@ -131,10 +139,18 @@ fn test_upgrade_by_owner() {
     e.deploy_contract_by_owner(burrowland_0_4_0_fake_wasm_bytes())
         .assert_success();
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.supplied[0].balance, amount);
+    assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
+
+    e.redeploy_latest();
+>>>>>>> 775689c (Add contract upgrade integration test)
 
     let asset = e.get_asset(&tokens.wnear);
     assert_eq!(asset.supplied.balance, amount);
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -183,4 +199,8 @@ fn test_degrade_fails() {
         .unwrap_json();
 
     assert_eq!(version, LATEST_VERSION);
+=======
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.supplied[0].balance, amount);
+>>>>>>> 775689c (Add contract upgrade integration test)
 }

@@ -4,6 +4,7 @@ name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -17,6 +18,9 @@ version = "0.3.0"
 =======
 version = "0.4.0"
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+version = "0.1.1"
+>>>>>>> 775689c (Add contract upgrade integration test)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

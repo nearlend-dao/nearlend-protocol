@@ -1,6 +1,10 @@
 #![allow(dead_code)]
 
+<<<<<<< HEAD:tests/setup/mod.rs
 use common::{AssetOptionalPrice, DurationSec, Price, PriceData, ONE_YOCTO};
+=======
+use common::{AssetOptionalPrice, Price, PriceData, ONE_YOCTO};
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::json;
@@ -19,6 +23,7 @@ use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -45,11 +50,15 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
     BURROWLAND_0_4_0_FAKE_WASM_BYTES => "res/burrowland_0.4.0-fake.wasm",
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+    BURROWLAND_0_1_0_WASM_BYTES => "res/burrowland_0.1.0.wasm",
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -90,6 +99,10 @@ pub fn burrowland_0_4_0_fake_wasm_bytes() -> &'static [u8] {
 pub fn burrowland_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_WASM_BYTES
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+pub fn burrowland_0_1_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_1_0_WASM_BYTES
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
 }
 
 pub const NEAR: &str = "near";
@@ -273,11 +286,16 @@ impl Env {
         Self::init_with_contract(&BURROWLAND_WASM_BYTES)
     }
 
+<<<<<<< HEAD:tests/setup/mod.rs
     pub fn redeploy_latest_by_key(&self) {
+=======
+    pub fn redeploy_latest(&self) {
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
         self.contract
             .user_account
             .create_transaction(a(BURROWLAND_ID))
             .deploy_contract(BURROWLAND_WASM_BYTES.to_vec())
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
 =======
@@ -293,10 +311,13 @@ impl Env {
 >>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
             .submit()
             .assert_success();
     }
 
+<<<<<<< HEAD:tests/setup/mod.rs
     pub fn deploy_contract_by_owner(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.owner
             .create_transaction(a(BURROWLAND_ID))
@@ -304,6 +325,8 @@ impl Env {
             .submit()
     }
 
+=======
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
     pub fn setup_assets(&self, tokens: &Tokens) {
         self.owner
             .function_call(
@@ -813,6 +836,7 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
 pub fn basic_setup() -> (Env, Tokens, Users) {
     basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
 }
+<<<<<<< HEAD:tests/setup/mod.rs
 <<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
 =======
@@ -826,3 +850,5 @@ pub fn sec_to_nano(sec: u32) -> u64 {
 >>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
