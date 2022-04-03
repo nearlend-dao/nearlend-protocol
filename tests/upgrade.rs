@@ -16,6 +16,7 @@ fn test_upgrade() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
 =======
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_1_wasm_bytes());
@@ -61,6 +62,9 @@ fn test_upgrade_with_private_key() {
 fn test_upgrade() {
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_0_wasm_bytes());
 >>>>>>> 775689c (Add contract upgrade integration test)
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_1_1_wasm_bytes());
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -166,6 +170,7 @@ fn test_upgrade_by_owner() {
 
     assert_eq!(version, "0.4.0-fake");
 
+<<<<<<< HEAD
     e.deploy_contract_by_owner(burrowland_wasm_bytes())
         .assert_success();
 
@@ -174,6 +179,16 @@ fn test_upgrade_by_owner() {
 >>>>>>> d7df3ed (Add contract upgrade integration test)
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+    let config: Config = e
+        .near
+        .view_method_call(e.contract.contract.get_config())
+        .unwrap_json();
+    assert_eq!(config.max_num_assets, 10);
+    assert_eq!(config.maximum_recency_duration_sec, 90);
+    assert_eq!(config.maximum_staleness_duration_sec, 15);
+
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
     let asset = e.get_asset(&tokens.wnear);
     assert_eq!(asset.supplied.balance, amount);
 

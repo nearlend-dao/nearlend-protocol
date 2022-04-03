@@ -33,6 +33,7 @@ pub struct Config {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
@@ -71,6 +72,8 @@ impl Config {
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 }
 
 impl Contract {
@@ -137,8 +140,11 @@ impl Contract {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
         if asset.config.extra_decimals != asset_config.extra_decimals {
             assert!(
                 asset.borrowed.balance == 0 && asset.supplied.balance == 0 && asset.reserved == 0,
@@ -146,12 +152,15 @@ impl Contract {
             );
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 1d7cd75 (Update to SDK 4.0.0)
 =======
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> 005b54c (Update to SDK 4.0.0)
+=======
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
         asset.config = asset_config;
         self.internal_set_asset(&token_id, asset);
     }

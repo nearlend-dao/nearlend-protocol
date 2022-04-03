@@ -5,6 +5,7 @@ name = "contract"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
@@ -21,6 +22,9 @@ version = "0.3.0"
 =======
 version = "0.4.0"
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+version = "0.2.0"
+>>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 
