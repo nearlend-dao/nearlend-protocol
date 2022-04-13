@@ -8,6 +8,9 @@ impl Contract {
     #[init(ignore_state)]
     pub fn migrate_state() -> Self {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 93b532d (Missing files)
         #[derive(BorshDeserialize, BorshSerialize)]
         pub struct OldConfig {
             /// The account ID of the oracle contract
@@ -21,6 +24,7 @@ impl Contract {
 
             /// The number of decimals of the booster fungible token.
             pub booster_decimals: u8,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -68,11 +72,35 @@ mod upgrade {
     use near_sdk::{require, Gas};
 
 <<<<<<< HEAD
+=======
+        }
+
+        #[derive(BorshDeserialize)]
+        pub struct OldContract {
+            pub accounts: UnorderedMap<AccountId, VAccount>,
+            pub storage: LookupMap<AccountId, VStorage>,
+            pub assets: LookupMap<TokenId, VAsset>,
+            pub asset_farms: LookupMap<FarmId, VAssetFarm>,
+            pub asset_ids: UnorderedSet<TokenId>,
+            pub config: LazyOption<OldConfig>,
+        }
+
+        let OldContract {
+            accounts,
+            storage,
+            assets,
+            asset_farms,
+            asset_ids,
+            config: old_config,
+        } = env::state_read().expect("Failed to read old contract state");
+
+>>>>>>> 93b532d (Missing files)
         let OldConfig {
             oracle_account_id,
             owner_id,
             booster_token_id,
             booster_decimals,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -94,6 +122,8 @@ mod upgrade {
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> 93b532d (Missing files)
         } = old_config.get().expect("Failed to read old config");
 
         let new_config = Config {
@@ -101,6 +131,7 @@ mod upgrade {
             owner_id,
             booster_token_id,
             booster_decimals,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -190,4 +221,22 @@ mod upgrade {
             sys::promise_return(promise_id);
         }
     }
+=======
+            max_num_assets: 10,
+            maximum_recency_duration_sec: 90,
+            maximum_staleness_duration_sec: 15,
+        };
+
+        Self {
+            accounts,
+            storage,
+            assets,
+            asset_farms,
+            asset_ids,
+            config: LazyOption::new(StorageKey::Config, Some(&new_config)),
+        }
+    }
+
+    // TODO: Upgrade by owner.
+>>>>>>> 93b532d (Missing files)
 }
