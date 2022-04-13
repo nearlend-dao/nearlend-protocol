@@ -202,6 +202,7 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
+<<<<<<< HEAD
     /// Claims all unclaimed farm rewards and starts farming new farms.
     pub fn account_farm_claim_all(&mut self) {
         let account_id = env::predecessor_account_id();
@@ -215,10 +216,17 @@ impl Contract {
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+    /// Claims all unclaimed farm rewards and start farming new farms.
+    pub fn account_farm_claim_all(&mut self) {
+        let account_id = env::predecessor_account_id();
+        let mut account = self.internal_unwrap_account(&account_id);
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
         account
             .affected_farms
             .extend(account.get_all_potential_farms());
         self.internal_account_apply_affected_farms(&mut account);
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -233,6 +241,8 @@ impl Contract {
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
         self.internal_set_account(&account_id, account);
     }
 }

@@ -339,6 +339,7 @@ name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -358,6 +359,9 @@ version = "0.1.1"
 =======
 version = "0.2.0"
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+version = "0.3.0"
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 dependencies = [
  "approx",
  "common",
@@ -530,6 +534,7 @@ name = "contract"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.2.0"
@@ -549,6 +554,9 @@ version = "0.4.0"
 =======
 version = "0.2.0"
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+version = "0.3.0"
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 dependencies = [
  "common",
  "near-contract-standards",

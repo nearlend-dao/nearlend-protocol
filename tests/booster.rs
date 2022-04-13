@@ -2,6 +2,10 @@ mod setup;
 
 use crate::setup::*;
 use common::DurationSec;
+<<<<<<< HEAD
+=======
+use near_sdk::json_types::U128;
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 use near_sdk::serde_json::json;
 
 #[test]
@@ -18,6 +22,7 @@ fn test_booster_stake_unstake() {
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount);
     assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+<<<<<<< HEAD
     assert!(account.booster_staking.is_none());
 
     let duration_sec: DurationSec = MAX_DURATION_SEC;
@@ -218,6 +223,10 @@ fn test_booster_stake_all() {
     let amount = d(100, 18);
     e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
         .assert_success();
+=======
+
+    let duration_sec: DurationSec = 31536000;
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     users
         .alice
@@ -225,7 +234,12 @@ fn test_booster_stake_all() {
             e.contract.account_id(),
             "account_stake_booster",
             &json!({
+<<<<<<< HEAD
                 "duration": MAX_DURATION_SEC,
+=======
+                "amount": U128::from(amount),
+                "duration": duration_sec,
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
             })
             .to_string()
             .into_bytes(),
@@ -234,12 +248,22 @@ fn test_booster_stake_all() {
         )
         .assert_success();
 
+<<<<<<< HEAD
     let asset = e.get_asset(&e.booster_token);
     assert_eq!(asset.supplied.balance, 0);
 
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
     let account = e.get_account(&users.alice);
     assert!(account.supplied.is_empty());
     let booster_staking = account.booster_staking.unwrap();
     assert_eq!(booster_staking.staked_booster_amount, amount);
     assert_eq!(booster_staking.x_booster_amount, amount * 4);
+<<<<<<< HEAD
+=======
+    assert_eq!(
+        booster_staking.unlock_timestamp,
+        GENESIS_TIMESTAMP + sec_to_nano(duration_sec)
+    );
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 }

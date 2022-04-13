@@ -34,10 +34,13 @@ pub struct Config {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     /// The minimum duration to stake booster token in seconds.
     pub minimum_staking_duration_sec: DurationSec,
@@ -58,6 +61,7 @@ impl Config {
             "The maximum staking duration must be greater than minimum staking duration"
         );
         assert!(
+<<<<<<< HEAD
             self.x_booster_multiplier_at_maximum_staking_duration >= MIN_BOOSTER_MULTIPLIER,
             "xBooster multiplier should be no less than 100%"
         );
@@ -74,6 +78,12 @@ impl Config {
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+            self.x_booster_multiplier_at_maximum_staking_duration >= MAX_RATIO,
+            "xBooster multiplier should be no less than 100%"
+        );
+    }
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 }
 
 impl Contract {

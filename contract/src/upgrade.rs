@@ -29,10 +29,13 @@ impl Contract {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 
             /// The total number of different assets
             pub max_num_assets: u32,
@@ -45,6 +48,7 @@ impl Contract {
             /// delay the price updates are due to the shard congestion.
             /// This parameter can be updated in the future by the owner.
             pub maximum_staleness_duration_sec: DurationSec,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -73,6 +77,8 @@ mod upgrade {
 
 <<<<<<< HEAD
 =======
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
         }
 
         #[derive(BorshDeserialize)]
@@ -105,6 +111,7 @@ mod upgrade {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             max_num_assets,
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
@@ -124,6 +131,11 @@ mod upgrade {
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> 93b532d (Missing files)
+=======
+            max_num_assets,
+            maximum_recency_duration_sec,
+            maximum_staleness_duration_sec,
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
         } = old_config.get().expect("Failed to read old config");
 
         let new_config = Config {
@@ -136,16 +148,20 @@ mod upgrade {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
             max_num_assets,
             maximum_recency_duration_sec,
             maximum_staleness_duration_sec,
             minimum_staking_duration_sec: 2678400,
             maximum_staking_duration_sec: 31536000,
             x_booster_multiplier_at_maximum_staking_duration: 40000,
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -225,6 +241,8 @@ mod upgrade {
             max_num_assets: 10,
             maximum_recency_duration_sec: 90,
             maximum_staleness_duration_sec: 15,
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
         };
 
         Self {

@@ -5,14 +5,18 @@ use crate::setup::*;
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 use contract::{AccountFarmView, AssetView};
 use near_sdk::serde::Deserialize;
 use near_sdk::AccountId;
 
 #[test]
 fn test_upgrade() {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -97,6 +101,9 @@ fn test_upgrade() {
 fn test_upgrade_by_owner() {
     let (e, tokens, users) = basic_setup_with_contract(burrowland_wasm_bytes());
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -108,8 +115,11 @@ fn test_upgrade_by_owner() {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
     #[derive(Debug, Deserialize)]
     #[serde(crate = "near_sdk::serde")]
     pub struct AccountDetailedViewV020 {
@@ -121,6 +131,7 @@ fn test_upgrade_by_owner() {
     }
 
     let account: Option<AccountDetailedViewV020> = e
+<<<<<<< HEAD
 =======
     let version: String = e
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
@@ -145,6 +156,13 @@ fn test_upgrade_by_owner() {
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
 =======
     let account = e.get_account(&users.alice);
+=======
+        .near
+        .view_method_call(e.contract.contract.get_account(users.alice.account_id()))
+        .unwrap_json();
+    let account = account.unwrap();
+
+>>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
     assert_eq!(account.supplied[0].balance, amount);
     assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
 
