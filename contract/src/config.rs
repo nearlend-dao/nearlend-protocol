@@ -62,6 +62,7 @@ impl Config {
         );
         assert!(
 <<<<<<< HEAD
+<<<<<<< HEAD
             self.x_booster_multiplier_at_maximum_staking_duration >= MIN_BOOSTER_MULTIPLIER,
             "xBooster multiplier should be no less than 100%"
         );
@@ -80,6 +81,9 @@ impl Config {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
             self.x_booster_multiplier_at_maximum_staking_duration >= MAX_RATIO,
+=======
+            self.x_booster_multiplier_at_maximum_staking_duration >= MIN_BOOSTER_MULTIPLIER,
+>>>>>>> b9aa945 (Fix remaining tests for recency duration)
             "xBooster multiplier should be no less than 100%"
         );
     }
