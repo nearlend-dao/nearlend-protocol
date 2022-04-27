@@ -51,6 +51,7 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 >>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
 =======
     BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
+<<<<<<< HEAD
     BURROWLAND_0_4_0_FAKE_WASM_BYTES => "res/burrowland_0.4.0-fake.wasm",
 >>>>>>> b9665e0 (Add remote upgrade functionality by owner)
 =======
@@ -66,6 +67,9 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
     BURROWLAND_0_4_0_FAKE_WASM_BYTES => "res/burrowland_0.4.0-fake.wasm",
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
+=======
+    BURROWLAND_0_4_0_WASM_BYTES => "res/burrowland_0.4.0.wasm",
+>>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
@@ -110,8 +114,8 @@ pub fn burrowland_0_3_0_wasm_bytes() -> &'static [u8] {
     &BURROWLAND_0_3_0_WASM_BYTES
 }
 
-pub fn burrowland_0_4_0_fake_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_4_0_FAKE_WASM_BYTES
+pub fn burrowland_0_4_0_wasm_bytes() -> &'static [u8] {
+    &BURROWLAND_0_4_0_WASM_BYTES
 }
 
 pub fn burrowland_wasm_bytes() -> &'static [u8] {
@@ -328,6 +332,7 @@ impl Env {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:tests/setup/mod.rs
     pub fn redeploy_latest_by_key(&self) {
 =======
@@ -348,6 +353,13 @@ impl Env {
 >>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
+=======
+    pub fn deploy_contract_by_key(&self, contract_bytes: &[u8]) -> ExecutionResult {
+        self.contract
+            .user_account
+            .create_transaction(a(BURROWLAND_ID))
+            .deploy_contract(contract_bytes.to_vec())
+>>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
             .function_call(
                 "migrate_state".to_string(),
                 b"{}".to_vec(),
@@ -365,7 +377,6 @@ impl Env {
 =======
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
             .submit()
-            .assert_success();
     }
 
 <<<<<<< HEAD
@@ -658,11 +669,7 @@ impl Env {
             &user,
             price_data,
             PriceReceiverMsg::Execute {
-                actions: vec![Action::Borrow(AssetAmount {
-                    token_id: token.account_id(),
-                    amount: Some(amount.into()),
-                    max_amount: None,
-                })],
+                actions: vec![Action::Borrow(asset_amount(token, amount))],
             },
         )
     }
@@ -679,17 +686,30 @@ impl Env {
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![
-                    Action::Borrow(AssetAmount {
-                        token_id: token.account_id(),
-                        amount: Some(amount.into()),
-                        max_amount: None,
-                    }),
-                    Action::Withdraw(AssetAmount {
-                        token_id: token.account_id(),
-                        amount: Some(amount.into()),
-                        max_amount: None,
-                    }),
+                    Action::Borrow(asset_amount(token, amount)),
+                    Action::Withdraw(asset_amount(token, amount)),
                 ],
+            },
+        )
+    }
+
+    pub fn liquidate(
+        &self,
+        user: &UserAccount,
+        liquidation_user: &UserAccount,
+        price_data: PriceData,
+        in_assets: Vec<AssetAmount>,
+        out_assets: Vec<AssetAmount>,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            &user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::Liquidate {
+                    account_id: liquidation_user.account_id(),
+                    in_assets,
+                    out_assets,
+                }],
             },
         )
     }
@@ -907,6 +927,7 @@ pub fn sec_to_nano(sec: u32) -> u64 {
 }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> d7df3ed (Add contract upgrade integration test):tests/setup.rs
 =======
@@ -915,3 +936,13 @@ pub fn sec_to_nano(sec: u32) -> u64 {
 >>>>>>> 775689c (Add contract upgrade integration test):tests/setup.rs
 =======
 >>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+
+pub fn asset_amount(token: &UserAccount, amount: Balance) -> AssetAmount {
+    AssetAmount {
+        token_id: token.account_id(),
+        amount: Some(amount.into()),
+        max_amount: None,
+    }
+}
+>>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)

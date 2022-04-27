@@ -103,7 +103,8 @@ fn test_upgrade_with_private_key() {
         .view_method_call(e.contract.contract.get_version())
         .is_err());
 
-    e.redeploy_latest_by_key();
+    e.deploy_contract_by_key(burrowland_0_4_0_wasm_bytes())
+        .assert_success();
 
     let asset = e.get_asset(&tokens.wnear);
     assert_eq!(asset.supplied.balance, amount);
@@ -113,11 +114,12 @@ fn test_upgrade_with_private_key() {
         .view_method_call(e.contract.contract.get_version())
         .unwrap_json();
 
-    assert_eq!(version, LATEST_VERSION);
+    assert_eq!(version, "0.4.0");
 }
 
 #[test]
 fn test_upgrade_by_owner() {
+<<<<<<< HEAD
     let (e, tokens, users) = basic_setup_with_contract(burrowland_wasm_bytes());
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
 
@@ -156,6 +158,9 @@ fn test_upgrade_by_owner() {
 =======
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_2_0_wasm_bytes());
 >>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_4_0_wasm_bytes());
+>>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -191,6 +196,7 @@ fn test_upgrade_by_owner() {
         .view_method_call(e.contract.contract.get_version())
         .unwrap_json();
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -270,6 +276,9 @@ fn test_upgrade_by_owner() {
         .unwrap_json();
 
     assert_eq!(version, "0.4.0-fake");
+=======
+    assert_eq!(version, "0.4.0");
+>>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
 
     e.deploy_contract_by_owner(burrowland_wasm_bytes())
         .assert_success();
