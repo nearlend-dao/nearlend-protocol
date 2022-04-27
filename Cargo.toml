@@ -7,6 +7,7 @@ name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -29,6 +30,9 @@ version = "0.2.0"
 =======
 version = "0.3.0"
 >>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
+=======
+version = "0.4.0"
+>>>>>>> 51ba65c (Add remote upgrade functionality by owner)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 
