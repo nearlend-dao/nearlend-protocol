@@ -8,6 +8,7 @@ name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -33,6 +34,9 @@ version = "0.3.0"
 =======
 version = "0.4.0"
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
+=======
+version = "0.4.1"
+>>>>>>> d481256 (Prevent liquidations that decrease health factor)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

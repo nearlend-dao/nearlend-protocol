@@ -72,7 +72,7 @@ fn test_upgrade() {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 
-const LATEST_VERSION: &'static str = "0.4.0";
+const LATEST_VERSION: &'static str = "0.4.1";
 
 #[test]
 fn test_version() {
