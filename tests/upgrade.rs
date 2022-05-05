@@ -72,7 +72,8 @@ fn test_upgrade() {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 
-const LATEST_VERSION: &'static str = "0.4.1";
+const PREVIOUS_VERSION: &'static str = "0.4.1";
+const LATEST_VERSION: &'static str = "0.5.0";
 
 #[test]
 fn test_version() {
@@ -120,6 +121,7 @@ fn test_upgrade_with_private_key() {
 #[test]
 fn test_upgrade_by_owner() {
 <<<<<<< HEAD
+<<<<<<< HEAD
     let (e, tokens, users) = basic_setup_with_contract(burrowland_wasm_bytes());
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
 
@@ -161,6 +163,9 @@ fn test_upgrade_by_owner() {
 =======
     let (e, tokens, users) = basic_setup_with_contract(burrowland_0_4_0_wasm_bytes());
 >>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
+=======
+    let (e, tokens, users) = basic_setup_with_contract(burrowland_previous_wasm_bytes());
+>>>>>>> 39d3f8f (Ability to force close the account with bad debt)
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -275,10 +280,14 @@ fn test_upgrade_by_owner() {
         .view_method_call(e.contract.contract.get_version())
         .unwrap_json();
 
+<<<<<<< HEAD
     assert_eq!(version, "0.4.0-fake");
 =======
     assert_eq!(version, "0.4.0");
 >>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
+=======
+    assert_eq!(version, PREVIOUS_VERSION);
+>>>>>>> 39d3f8f (Ability to force close the account with bad debt)
 
     e.deploy_contract_by_owner(burrowland_wasm_bytes())
         .assert_success();
@@ -297,7 +306,7 @@ fn test_upgrade_by_owner() {
 
 #[test]
 fn test_degrade_fails() {
-    let (e, _tokens, _users) = basic_setup();
+    let (e, _tokens, _users) = basic_setup_with_contract(burrowland_0_4_0_wasm_bytes());
 
     assert!(!e
         .deploy_contract_by_owner(burrowland_0_3_0_wasm_bytes())
@@ -308,6 +317,7 @@ fn test_degrade_fails() {
         .view_method_call(e.contract.contract.get_version())
         .unwrap_json();
 
+<<<<<<< HEAD
     assert_eq!(version, LATEST_VERSION);
 <<<<<<< HEAD
 =======
@@ -316,4 +326,7 @@ fn test_degrade_fails() {
 >>>>>>> 775689c (Add contract upgrade integration test)
 =======
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
+=======
+    assert_eq!(version, "0.4.0");
+>>>>>>> 39d3f8f (Ability to force close the account with bad debt)
 }
