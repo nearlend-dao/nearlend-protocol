@@ -19,6 +19,7 @@ pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
     ContractContract as BurrowlandContract, PriceReceiverMsg, TokenReceiverMsg,
 };
+use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
@@ -974,4 +975,17 @@ pub fn asset_amount(token: &UserAccount, amount: Balance) -> AssetAmount {
         max_amount: None,
     }
 }
+<<<<<<< HEAD
 >>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
+=======
+
+pub const EVENT_JSON: &str = "EVENT_JSON:";
+
+pub fn get_logs(runtime: &RuntimeStandalone) -> Vec<String> {
+    runtime
+        .last_outcomes
+        .iter()
+        .flat_map(|hash| runtime.outcome(hash).map(|o| o.logs).unwrap_or_default())
+        .collect()
+}
+>>>>>>> 889080d (Add events. Support no booster farms)

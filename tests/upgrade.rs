@@ -73,7 +73,7 @@ fn test_upgrade() {
 =======
 
 const PREVIOUS_VERSION: &'static str = "0.4.1";
-const LATEST_VERSION: &'static str = "0.5.1";
+const LATEST_VERSION: &'static str = "0.5.2";
 
 #[test]
 fn test_version() {
