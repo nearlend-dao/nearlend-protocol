@@ -12,6 +12,7 @@ name = "burrowland"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "0.3.0"
 =======
 version = "0.1.1"
@@ -49,6 +50,9 @@ version = "0.5.1"
 =======
 version = "0.5.2"
 >>>>>>> 889080d (Add events. Support no booster farms)
+=======
+version = "0.6.0"
+>>>>>>> bdcc269 (Bump version to 0.6.0. Remove migration)
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 

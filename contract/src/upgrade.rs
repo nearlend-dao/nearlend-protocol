@@ -11,6 +11,7 @@ impl Contract {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 93b532d (Missing files)
         #[derive(BorshDeserialize, BorshSerialize)]
@@ -155,6 +156,10 @@ mod upgrade {
             config: LazyOption::new(StorageKey::Config, Some(&new_config)),
         }
 >>>>>>> 39d3f8f (Ability to force close the account with bad debt)
+=======
+        let contract: Self = env::state_read().unwrap();
+        contract
+>>>>>>> bdcc269 (Bump version to 0.6.0. Remove migration)
     }
 >>>>>>> 51ba65c (Add remote upgrade functionality by owner)
 

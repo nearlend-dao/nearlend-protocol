@@ -71,10 +71,14 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 =======
     BURROWLAND_0_4_0_WASM_BYTES => "res/burrowland_0.4.0.wasm",
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 8e84495 (Add liquidation tests. Add health factor debug info. Rework upgrade test)
 =======
     BURROWLAND_0_4_1_WASM_BYTES => "res/burrowland_0.4.1.wasm",
 >>>>>>> 39d3f8f (Ability to force close the account with bad debt)
+=======
+    BURROWLAND_PREVIOUS_WASM_BYTES => "res/burrowland_0.5.1.wasm",
+>>>>>>> bdcc269 (Bump version to 0.6.0. Remove migration)
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
 
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
@@ -124,7 +128,7 @@ pub fn burrowland_0_4_0_wasm_bytes() -> &'static [u8] {
 }
 
 pub fn burrowland_previous_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_4_1_WASM_BYTES
+    &BURROWLAND_PREVIOUS_WASM_BYTES
 }
 
 pub fn burrowland_wasm_bytes() -> &'static [u8] {

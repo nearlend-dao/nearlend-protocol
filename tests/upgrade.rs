@@ -72,8 +72,8 @@ fn test_upgrade() {
 >>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
 =======
 
-const PREVIOUS_VERSION: &'static str = "0.4.1";
-const LATEST_VERSION: &'static str = "0.5.2";
+const PREVIOUS_VERSION: &'static str = "0.5.1";
+const LATEST_VERSION: &'static str = "0.6.0";
 
 #[test]
 fn test_version() {
