@@ -6,27 +6,67 @@ static ASSET_FARMS: Lazy<Mutex<HashMap<FarmId, Option<AssetFarm>>>> =
 const NANOS_PER_DAY: Duration = 24 * 60 * 60 * 10u64.pow(9);
 
 /// A data required to keep track of a farm for an account.
-#[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Deserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct AssetFarm {
     #[serde(with = "u64_dec_format")]
     pub block_timestamp: Timestamp,
-    pub rewards: Vec<AssetFarmReward>,
+    /// Active rewards for the farm
+    pub rewards: HashMap<TokenId, AssetFarmReward>,
+    /// Inactive rewards
+    #[serde(skip_serializing)]
+    pub inactive_rewards: LookupMap<TokenId, VAssetFarmReward>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Deserialize)]
+impl Clone for AssetFarm {
+    fn clone(&self) -> Self {
+        Self {
+            block_timestamp: self.block_timestamp,
+            rewards: self.rewards.clone(),
+            inactive_rewards: BorshDeserialize::try_from_slice(
+                &self.inactive_rewards.try_to_vec().unwrap(),
+            )
+            .unwrap(),
+        }
+    }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
+pub enum VAssetFarmReward {
+    Current(AssetFarmReward),
+}
+
+impl From<VAssetFarmReward> for AssetFarmReward {
+    fn from(v: VAssetFarmReward) -> Self {
+        match v {
+            VAssetFarmReward::Current(c) => c,
+        }
+    }
+}
+
+impl From<AssetFarmReward> for VAssetFarmReward {
+    fn from(c: AssetFarmReward) -> Self {
+        VAssetFarmReward::Current(c)
+    }
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Default)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
 #[serde(crate = "near_sdk::serde")]
 pub struct AssetFarmReward {
-    pub token_id: TokenId,
+    /// The amount of reward distributed per day.
     #[serde(with = "u128_dec_format")]
     pub reward_per_day: Balance,
-    /// Including decimals
+    /// The log base for the booster. Used to compute boosted shares per account.
+    /// Including decimals of the booster.
     #[serde(with = "u128_dec_format")]
     pub booster_log_base: Balance,
 
+    /// The amount of rewards remaining to distribute.
     #[serde(with = "u128_dec_format")]
     pub remaining_rewards: Balance,
 
+    /// The total number of boosted shares.
     #[serde(with = "u128_dec_format")]
     pub boosted_shares: Balance,
     #[serde(skip)]
@@ -34,14 +74,15 @@ pub struct AssetFarmReward {
 }
 
 impl AssetFarm {
-    pub fn update(&mut self) {
+    pub fn update(&mut self, is_view: bool) {
         let block_timestamp = env::block_timestamp();
         if block_timestamp == self.block_timestamp {
             return;
         }
         let time_diff = block_timestamp - self.block_timestamp;
         self.block_timestamp = block_timestamp;
-        for reward in &mut self.rewards {
+        let mut new_inactive_reward = vec![];
+        for (token_id, reward) in self.rewards.iter_mut() {
             if reward.boosted_shares == 0 {
                 continue;
             }
@@ -56,7 +97,39 @@ impl AssetFarm {
             reward.remaining_rewards -= acquired_rewards;
             reward.reward_per_share = reward.reward_per_share
                 + BigDecimal::from(acquired_rewards) / BigDecimal::from(reward.boosted_shares);
+            if reward.remaining_rewards == 0 {
+                new_inactive_reward.push(token_id.clone());
+            }
         }
+        if !is_view {
+            for token_id in new_inactive_reward {
+                let reward = self.rewards.remove(&token_id).unwrap();
+                self.internal_set_inactive_asset_farm_reward(&token_id, reward);
+            }
+        }
+    }
+
+    pub fn internal_get_inactive_asset_farm_reward(
+        &self,
+        token_id: &TokenId,
+    ) -> Option<AssetFarmReward> {
+        self.inactive_rewards.get(token_id).map(|o| o.into())
+    }
+
+    pub fn internal_remove_inactive_asset_farm_reward(
+        &mut self,
+        token_id: &TokenId,
+    ) -> Option<AssetFarmReward> {
+        self.inactive_rewards.remove(token_id).map(|o| o.into())
+    }
+
+    pub fn internal_set_inactive_asset_farm_reward(
+        &mut self,
+        token_id: &TokenId,
+        asset_farm_reward: AssetFarmReward,
+    ) {
+        self.inactive_rewards
+            .insert(token_id, &asset_farm_reward.into());
     }
 }
 
@@ -80,17 +153,17 @@ impl From<AssetFarm> for VAssetFarm {
 }
 
 impl Contract {
-    pub fn internal_unwrap_asset_farm(&self, farm_id: &FarmId) -> AssetFarm {
-        self.internal_get_asset_farm(farm_id)
+    pub fn internal_unwrap_asset_farm(&self, farm_id: &FarmId, is_view: bool) -> AssetFarm {
+        self.internal_get_asset_farm(farm_id, is_view)
             .expect("Asset farm not found")
     }
 
-    pub fn internal_get_asset_farm(&self, farm_id: &FarmId) -> Option<AssetFarm> {
+    pub fn internal_get_asset_farm(&self, farm_id: &FarmId, is_view: bool) -> Option<AssetFarm> {
         let mut cache = ASSET_FARMS.lock().unwrap();
         cache.get(farm_id).cloned().unwrap_or_else(|| {
             let asset_farm = self.asset_farms.get(farm_id).map(|v| {
                 let mut asset_farm: AssetFarm = v.into();
-                asset_farm.update();
+                asset_farm.update(is_view);
                 asset_farm
             });
             cache.insert(farm_id.clone(), asset_farm.clone());
@@ -111,7 +184,7 @@ impl Contract {
 impl Contract {
     /// Returns an asset farm for a given farm ID.
     pub fn get_asset_farm(&self, farm_id: FarmId) -> Option<AssetFarm> {
-        self.internal_get_asset_farm(&farm_id)
+        self.internal_get_asset_farm(&farm_id, true)
     }
 
     /// Returns a list of pairs (farm ID, asset farm) for a given list of farm IDs.
@@ -119,7 +192,7 @@ impl Contract {
         farm_ids
             .into_iter()
             .filter_map(|farm_id| {
-                self.internal_get_asset_farm(&farm_id)
+                self.internal_get_asset_farm(&farm_id, true)
                     .map(|asset_farm| (farm_id, asset_farm))
             })
             .collect()

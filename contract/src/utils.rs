@@ -1,7 +1,5 @@
 use crate::*;
 
-const MAX_RATIO: u32 = 10000;
-
 pub(crate) type TokenId = AccountId;
 
 pub(crate) fn unordered_map_pagination<K, VV, V>(
@@ -29,6 +27,10 @@ pub(crate) fn nano_to_ms(nano: u64) -> u64 {
 
 pub(crate) fn ms_to_nano(ms: u64) -> u64 {
     ms * 10u64.pow(6)
+}
+
+pub(crate) fn sec_to_nano(sec: u32) -> u64 {
+    u64::from(sec) * 10u64.pow(9)
 }
 
 pub(crate) fn u128_ratio(a: u128, num: u128, denom: u128) -> Balance {

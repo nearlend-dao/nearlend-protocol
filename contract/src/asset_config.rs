@@ -23,6 +23,7 @@ const MAX_RATIO: u32 = 10000;
 /// }
 /// ```
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub struct AssetConfig {
     /// The ratio of interest that is reserved by the protocol (multiplied by 10000).
@@ -66,6 +67,8 @@ impl AssetConfig {
         assert!(self.reserve_ratio <= MAX_RATIO);
         assert!(self.target_utilization < MAX_POS);
         assert!(self.target_utilization_rate.0 <= self.max_utilization_rate.0);
+        // The volatility ratio can't be 100% to avoid free liquidations of such assets.
+        assert!(self.volatility_ratio < MAX_RATIO);
     }
 
     pub fn get_rate(
@@ -76,7 +79,6 @@ impl AssetConfig {
         if total_supplied_balance == 0 {
             BigDecimal::one()
         } else {
-            // Fix overflow
             let pos = BigDecimal::from(borrowed_balance).div_u128(total_supplied_balance);
             let target_utilization = BigDecimal::from_ratio(self.target_utilization);
             if pos < target_utilization {
@@ -88,7 +90,7 @@ impl AssetConfig {
                     + (pos - target_utilization)
                         * (BigDecimal::from(self.max_utilization_rate)
                             - BigDecimal::from(self.target_utilization_rate))
-                        / BigDecimal::from(MAX_POS - self.target_utilization)
+                        / BigDecimal::from_ratio(MAX_POS - self.target_utilization)
             }
         }
     }
@@ -115,22 +117,13 @@ mod tests {
         }
     }
 
-    fn almost_eq(a: u128, b: u128, prec: u32) {
-        let p = 10u128.pow(27 - prec);
-        let ap = (a + p / 2) / p;
-        let bp = (b + p / 2) / p;
-        assert_eq!(
-            ap,
-            bp,
-            "{}",
-            format!("Expected {} to eq {}, with precision {}", a, b, prec)
-        );
-    }
-
     #[test]
-    fn test_get_rate() {
+    fn test_get_rate_and_apr() {
         let config = test_config();
-        let rate = config.get_rate(3 * ONE_NEAR, 18 * ONE_NEAR);
-        println!("{}", rate)
+        let rate = config.get_rate(81 * ONE_NEAR, 100 * ONE_NEAR);
+        println!("Rate: {}", rate);
+
+        let apr = rate.pow(MS_PER_YEAR) - BigDecimal::one();
+        println!("APR: {}", apr)
     }
 }

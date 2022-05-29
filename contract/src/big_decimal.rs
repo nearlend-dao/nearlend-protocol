@@ -1,9 +1,12 @@
 use crate::*;
 use near_sdk::borsh::maybestd::io::Write;
 use near_sdk::json_types::U128;
+use near_sdk::serde::Serializer;
 use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul, Sub};
+#[cfg(not(target_arch = "wasm32"))]
+use std::str::FromStr;
 
 uint::construct_uint!(
     pub struct U256(4);
@@ -13,7 +16,7 @@ uint::construct_uint!(
     pub struct U384(6);
 );
 
-const MAX_RATIO: u32 = 10000;
+pub(crate) const MAX_RATIO: u32 = 10000;
 
 const NUM_DECIMALS: u8 = 27;
 const BIG_DIVISOR: u128 = 10u128.pow(NUM_DECIMALS as u32);
@@ -39,6 +42,62 @@ impl Display for BigDecimal {
         } else {
             write!(f, "{}.0", a)
         }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl std::fmt::Debug for BigDecimal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+const PARSE_INT_ERROR: &'static str = "Parse int error";
+
+#[cfg(not(target_arch = "wasm32"))]
+impl FromStr for BigDecimal {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let dot_pos = s.find('.');
+        let (int, dec) = if let Some(dot_pos) = dot_pos {
+            (
+                &s[..dot_pos],
+                format!("{:0<27}", &s[dot_pos + 1..])
+                    .parse()
+                    .map_err(|_| PARSE_INT_ERROR)?,
+            )
+        } else {
+            (s, 0u128)
+        };
+        let int = U384::from_str(&int).map_err(|_| PARSE_INT_ERROR)?;
+        if dec >= BIG_DIVISOR {
+            return Err(String::from("The decimal part is too large"));
+        }
+        Ok(Self(int * U384::from(BIG_DIVISOR) + U384::from(dec)))
+    }
+}
+
+impl Serialize for BigDecimal {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl<'de> Deserialize<'de> for BigDecimal {
+    fn deserialize<D>(
+        deserializer: D,
+    ) -> Result<Self, <D as near_sdk::serde::Deserializer<'de>>::Error>
+    where
+        D: near_sdk::serde::Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        Ok(Self::from_str(&s).map_err(|err| near_sdk::serde::de::Error::custom(err))?)
     }
 }
 
@@ -127,17 +186,25 @@ impl BigDecimal {
         Self((self.0 * U384::from(MAX_RATIO) + U384::from(MAX_RATIO / 2)) / U384::from(ratio))
     }
 
-    pub fn from_balance_price(balance: Balance, price: &Price) -> Self {
+    pub fn from_balance_price(balance: Balance, price: &Price, extra_decimals: u8) -> Self {
         let num = U384::from(price.multiplier) * U384::from(balance);
-        if price.decimals > NUM_DECIMALS {
-            Self(num / U384::exp10((price.decimals - NUM_DECIMALS) as usize))
+        let denominator_decimals = price.decimals + extra_decimals;
+        if denominator_decimals > NUM_DECIMALS {
+            Self(num / U384::exp10((denominator_decimals - NUM_DECIMALS) as usize))
         } else {
-            Self(num * U384::exp10((NUM_DECIMALS - price.decimals) as usize))
+            Self(num * U384::exp10((NUM_DECIMALS - denominator_decimals) as usize))
         }
     }
 
     pub fn round_u128(&self) -> u128 {
         ((self.0 + U384::from(HALF_DIVISOR)) / U384::from(BIG_DIVISOR)).as_u128()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn f64(&self) -> f64 {
+        let base = (self.0 / U384::from(BIG_DIVISOR)).as_u128();
+        let fract = (self.0 - U384::from(base)).as_u128() as f64;
+        base as f64 + fract / (BIG_DIVISOR as f64)
     }
 
     pub fn round_mul_u128(&self, rhs: u128) -> u128 {
@@ -204,7 +271,7 @@ mod tests {
     use rand::RngCore;
 
     // Number of milliseconds in a regular year.
-    const N: u64 = 31536000000;
+    const N: u64 = MS_PER_YEAR;
     // X = 2
     const LOW_X: LowU128 = U128(2000000000000000000000000000);
     // R ** N = X. So R = X ** (1/N)
