@@ -1,9 +1,14 @@
 use common::*;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{assert_one_yocto, env, ext_contract, near_bindgen, AccountId, Gas, Promise};
+use near_sdk::json_types::ValidAccountId;
+#[allow(unused_imports)]
+use near_sdk::AccountId;
+use near_sdk::{assert_one_yocto, env, ext_contract, near_bindgen, Gas, Promise};
 
-const GAS_FOR_PROMISE: Gas = Gas(Gas::ONE_TERA.0 * 10);
+near_sdk::setup_alloc!();
+
+const GAS_FOR_PROMISE: Gas = 10 * TGAS;
 
 #[ext_contract(ext_price_receiver)]
 pub trait ExtPriceReceiver {
@@ -19,7 +24,7 @@ impl Contract {
     #[payable]
     pub fn oracle_call(
         &mut self,
-        receiver_id: AccountId,
+        receiver_id: ValidAccountId,
         price_data: PriceData,
         msg: String,
     ) -> Promise {
@@ -32,7 +37,7 @@ impl Contract {
             sender_id,
             price_data,
             msg,
-            receiver_id,
+            receiver_id.as_ref(),
             NO_DEPOSIT,
             remaining_gas - GAS_FOR_PROMISE,
         )

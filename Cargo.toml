@@ -1,71 +1,17 @@
 [package]
 name = "burrowland"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-version = "0.3.0"
-=======
-version = "0.1.1"
->>>>>>> d7df3ed (Add contract upgrade integration test)
-=======
-version = "0.2.0"
->>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
-=======
-version = "0.3.0"
->>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
-=======
-version = "0.4.0"
->>>>>>> b9665e0 (Add remote upgrade functionality by owner)
-=======
-version = "0.1.1"
->>>>>>> 775689c (Add contract upgrade integration test)
-=======
-version = "0.2.0"
->>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
-=======
-version = "0.3.0"
->>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
-=======
-version = "0.4.0"
->>>>>>> 51ba65c (Add remote upgrade functionality by owner)
-=======
-version = "0.4.1"
->>>>>>> d481256 (Prevent liquidations that decrease health factor)
-=======
-version = "0.5.0"
->>>>>>> 39d3f8f (Ability to force close the account with bad debt)
-=======
-version = "0.5.1"
->>>>>>> f90b50a (Address audit issues and recommendations. Bump to 0.5.1)
-=======
-version = "0.5.2"
->>>>>>> 889080d (Add events. Support no booster farms)
-=======
-version = "0.6.0"
->>>>>>> bdcc269 (Bump version to 0.6.0. Remove migration)
+version = "0.1.0"
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 
 [dev-dependencies]
-near-sdk = "=4.0.0-pre.7"
-near-sdk-sim = "=4.0.0-pre.7"
-near-contract-standards = "=4.0.0-pre.7"
+near-sdk = "3.1.0"
+near-sdk-sim = "3.1.0"
 
 common = { path = "./common"}
 contract = { path = "./contract" }
 test-oracle = { path = "./test-oracle" }
 
-approx = "0.5"
 
 [profile.release]
 codegen-units = 1

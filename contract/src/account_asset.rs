@@ -37,7 +37,7 @@ impl AccountAsset {
         if let Some(new_balance) = self.shares.0.checked_sub(shares.0) {
             self.shares.0 = new_balance;
         } else {
-            env::panic_str("Not enough asset balance");
+            env::panic(b"Not enough asset balance");
         }
     }
 
@@ -61,13 +61,11 @@ impl Account {
     }
 
     pub fn internal_set_asset(&mut self, token_id: &TokenId, account_asset: AccountAsset) {
-        self.storage_tracker.start();
         if account_asset.is_empty() {
             self.supplied.remove(token_id);
         } else {
             self.supplied.insert(token_id, &account_asset.into());
         }
-        self.storage_tracker.stop();
         self.add_affected_farm(FarmId::Supplied(token_id.clone()));
     }
 }

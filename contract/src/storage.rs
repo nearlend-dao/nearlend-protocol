@@ -5,15 +5,16 @@ use near_contract_standards::storage_management::{
 use near_sdk::json_types::U128;
 use near_sdk::StorageUsage;
 
-/// 10000 bytes
-const MIN_STORAGE_BALANCE: Balance = 10000u128 * env::STORAGE_PRICE_PER_BYTE;
+/// 1000 bytes
+const MIN_STORAGE_BALANCE: Balance = 1000u128 * env::STORAGE_PRICE_PER_BYTE;
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
+#[borsh_init(init)]
 pub struct Storage {
     pub storage_balance: Balance,
     pub used_bytes: StorageUsage,
     #[borsh_skip]
-    pub storage_tracker: StorageTracker,
+    pub initial_storage_usage: StorageUsage,
 }
 
 #[derive(BorshSerialize, BorshDeserialize)]
@@ -40,8 +41,12 @@ impl Storage {
         Self {
             storage_balance: 0,
             used_bytes: 0,
-            storage_tracker: Default::default(),
+            initial_storage_usage: env::storage_usage(),
         }
+    }
+
+    fn init(&mut self) {
+        self.initial_storage_usage = env::storage_usage();
     }
 
     fn assert_storage_covered(&self) {
@@ -64,22 +69,19 @@ impl Contract {
     }
 
     pub fn internal_set_storage(&mut self, account_id: &AccountId, mut storage: Storage) {
-        if storage.storage_tracker.bytes_added >= storage.storage_tracker.bytes_released {
-            let extra_bytes_used =
-                storage.storage_tracker.bytes_added - storage.storage_tracker.bytes_released;
+        let storage_usage = env::storage_usage();
+        if storage_usage > storage.initial_storage_usage {
+            let extra_bytes_used = storage_usage - storage.initial_storage_usage;
             storage.used_bytes += extra_bytes_used;
             storage.assert_storage_covered();
         } else {
-            let bytes_released =
-                storage.storage_tracker.bytes_released - storage.storage_tracker.bytes_added;
+            let bytes_released = storage.initial_storage_usage - storage_usage;
             assert!(
                 storage.used_bytes >= bytes_released,
                 "Internal storage accounting bug"
             );
             storage.used_bytes -= bytes_released;
         }
-        storage.storage_tracker.bytes_released = 0;
-        storage.storage_tracker.bytes_added = 0;
         self.storage.insert(account_id, &storage.into());
     }
 
@@ -103,7 +105,7 @@ impl StorageManagement for Contract {
     #[payable]
     fn storage_deposit(
         &mut self,
-        account_id: Option<AccountId>,
+        account_id: Option<ValidAccountId>,
         registration_only: Option<bool>,
     ) -> StorageBalance {
         let amount: Balance = env::attached_deposit();
@@ -122,7 +124,7 @@ impl StorageManagement for Contract {
         } else {
             let min_balance = self.storage_balance_bounds().min.0;
             if amount < min_balance {
-                env::panic_str("The attached deposit is less than the mimimum storage balance");
+                env::panic(b"The attached deposit is less than the mimimum storage balance");
             }
 
             let mut storage = Storage::new();
@@ -135,15 +137,9 @@ impl StorageManagement for Contract {
             } else {
                 storage.storage_balance = amount;
             }
-
-            let mut account = Account::new(&account_id);
-            // HACK: Tracking the extra bytes required to store the storage object itself and
-            // recording this under account storage tracker. It'll be accounted when saving the
-            // account below.
-            account.storage_tracker.start();
-            self.internal_set_storage(&account_id, storage);
-            account.storage_tracker.stop();
-            self.internal_set_account(&account_id, account);
+            // Saving storage object copy into the persistent storage to account for used bytes.
+            self.internal_set_storage(&account_id, storage.clone());
+            self.internal_set_account(&account_id, Account::new(&account_id), storage);
         }
         self.internal_storage_balance_of(&account_id).unwrap()
     }
@@ -155,7 +151,7 @@ impl StorageManagement for Contract {
         if let Some(storage_balance) = self.internal_storage_balance_of(&account_id) {
             let amount = amount.unwrap_or(storage_balance.available).0;
             if amount > storage_balance.available.0 {
-                env::panic_str("The amount is greater than the available storage balance");
+                env::panic(b"The amount is greater than the available storage balance");
             }
             if amount > 0 {
                 let mut storage = self.internal_unwrap_storage(&account_id);
@@ -165,14 +161,14 @@ impl StorageManagement for Contract {
             }
             self.internal_storage_balance_of(&account_id).unwrap()
         } else {
-            env::panic_str(&format!("The account {} is not registered", &account_id));
+            env::panic(format!("The account {} is not registered", &account_id).as_bytes());
         }
     }
 
     #[allow(unused_variables)]
     #[payable]
     fn storage_unregister(&mut self, force: Option<bool>) -> bool {
-        env::panic_str("The account can't be unregistered");
+        env::panic(b"The account can't be unregistered");
     }
 
     fn storage_balance_bounds(&self) -> StorageBalanceBounds {
@@ -182,7 +178,7 @@ impl StorageManagement for Contract {
         }
     }
 
-    fn storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
-        self.internal_storage_balance_of(&account_id)
+    fn storage_balance_of(&self, account_id: ValidAccountId) -> Option<StorageBalance> {
+        self.internal_storage_balance_of(account_id.as_ref())
     }
 }

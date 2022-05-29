@@ -13,7 +13,9 @@ echo -n "" > /tmp/empty
 near dev-deploy -f /tmp/empty
 OWNER_ID="$(cat neardev/dev-account)"
 
-ORACLE_ID="priceoracle.testnet"
+echo -e "$LG>>>>>>>>>>>>>>$TC Deploy the test oracle $LG<<<<<<<<<<<<<<$NC"
+near dev-deploy -f res/test_oracle.wasm
+ORACLE_ID="$(cat neardev/dev-account)"
 
 echo -e "$LG>>>>>>>>>>>>>>$TC Deploy the main contract $LG<<<<<<<<<<<<<<$NC"
 near dev-deploy -f res/burrowland.wasm
@@ -119,7 +121,7 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
 
 # USDT APR is 8%, to verify run ./scripts/apr_to_rate.py 8
 # Volatility ratio is 95%, since it's stable and liquid on NEAR
-# USDT by default has 6 decimals, the config adds extra 12 decimals, to bring the total to 18
+# It has extra 12 decimals, to bring total to 18
 near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
   "token_id": "'$USDT_TOKEN_ID'",
   "asset_config": {
@@ -128,7 +130,7 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
     "target_utilization_rate": "1000000000002440418605283556",
     "max_utilization_rate": "1000000000039724853136740579",
     "volatility_ratio": 9500,
-    "extra_decimals": 12,
+    "extra_decimals": 0,
     "can_deposit": true,
     "can_withdraw": true,
     "can_use_as_collateral": true,
@@ -182,14 +184,13 @@ near call $USDT_TOKEN_ID --accountId=$OWNER_ID mint '{
 near call $WNEAR_TOKEN_ID --accountId=$OWNER_ID near_deposit '{}' --amount=120
 
 echo -e "$LG>>>>>>>>>>>>>>$TC Adding some reserves from the owner: $LG<<<<<<<<<<<<<<$NC"
-echo -e "$LG>>>>>>>>>>>>>>$TC * 20000 BOOSTER $NC"
 echo -e "$LG>>>>>>>>>>>>>>$TC * 2 wETH $NC"
 echo -e "$LG>>>>>>>>>>>>>>$TC * 2000 DAI $NC"
 echo -e "$LG>>>>>>>>>>>>>>$TC * 2000 USDT $NC"
 echo -e "$LG>>>>>>>>>>>>>>$TC * 20 wNEAR $NC"
-near call $BOOSTER_TOKEN_ID --accountId=$OWNER_ID ft_transfer_call '{
+near call $WETH_TOKEN_ID --accountId=$OWNER_ID ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
-  "amount": "20000000000000000000000",
+  "amount": "2000000000000000000",
   "msg": "\"DepositToReserve\""
 }' --amount=$ONE_YOCTO --gas=$GAS
 

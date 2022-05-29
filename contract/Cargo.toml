@@ -1,80 +1,18 @@
 [package]
 name = "contract"
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-version = "0.3.0"
-=======
-version = "0.2.0"
->>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
-=======
-version = "0.3.0"
->>>>>>> 899b7fd (Fix farm claim all, add potential farms into the account view, xBooster token)
-=======
-version = "0.2.0"
->>>>>>> 9f1cff0 (Addressing minor issues. Introducting state migration for upgrades)
-=======
-version = "0.3.0"
->>>>>>> c3b16a5 (Fix farm claim all, add potential farms into the account view, xBooster token)
-=======
-version = "0.4.0"
->>>>>>> b9665e0 (Add remote upgrade functionality by owner)
-=======
-version = "0.2.0"
->>>>>>> c2e1d85 (Addressing minor issues. Introducting state migration for upgrades)
-=======
-version = "0.3.0"
->>>>>>> bb5561c (Fix farm claim all, add potential farms into the account view, xBooster token)
-=======
-version = "0.4.0"
->>>>>>> 51ba65c (Add remote upgrade functionality by owner)
-=======
-version = "0.4.1"
->>>>>>> d481256 (Prevent liquidations that decrease health factor)
-=======
-version = "0.5.0"
->>>>>>> 39d3f8f (Ability to force close the account with bad debt)
-=======
-version = "0.5.1"
->>>>>>> f90b50a (Address audit issues and recommendations. Bump to 0.5.1)
-=======
-version = "0.5.2"
->>>>>>> 889080d (Add events. Support no booster farms)
-=======
-version = "0.6.0"
->>>>>>> bdcc269 (Bump version to 0.6.0. Remove migration)
+version = "0.1.0"
 authors = ["Eugene The Dream <ek@proximity.dev>"]
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "=4.0.0-pre.7"
-near-contract-standards = "=4.0.0-pre.7"
-<<<<<<< HEAD
-<<<<<<< HEAD
-near-sys = "=0.1"
-uint = { version = "=0.9.0", default-features = false }
-=======
+near-sdk = "3.1.0"
+near-contract-standards = "3.1.0"
 uint = { version = "0.9.0", default-features = false }
->>>>>>> 005b54c (Update to SDK 4.0.0)
-=======
-near-sys = "=0.1"
-uint = { version = "=0.9.0", default-features = false }
->>>>>>> 51ba65c (Add remote upgrade functionality by owner)
 common = { path = "../common/" }
-once_cell = "=1.8.0"
+once_cell = "1.8.0"
 
 [dev-dependencies]
 rand = "0.8"

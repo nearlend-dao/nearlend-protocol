@@ -4,11 +4,10 @@ use near_contract_standards::fungible_token::receiver::FungibleTokenReceiver;
 use near_sdk::json_types::U128;
 use near_sdk::{is_promise_success, serde_json, PromiseOrValue};
 
-const GAS_FOR_FT_TRANSFER: Gas = Gas(Gas::ONE_TERA.0 * 10);
-const GAS_FOR_AFTER_FT_TRANSFER: Gas = Gas(Gas::ONE_TERA.0 * 20);
+const GAS_FOR_FT_TRANSFER: Gas = 10 * TGAS;
+const GAS_FOR_AFTER_FT_TRANSFER: Gas = 20 * TGAS;
 
-#[derive(Deserialize)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Serialize))]
+#[derive(Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub enum TokenReceiverMsg {
     Execute { actions: Vec<Action> },
@@ -23,7 +22,7 @@ impl FungibleTokenReceiver for Contract {
     /// - Requires to be called by the fungible token account.
     fn ft_on_transfer(
         &mut self,
-        sender_id: AccountId,
+        sender_id: ValidAccountId,
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128> {
@@ -48,48 +47,23 @@ impl FungibleTokenReceiver for Contract {
                 TokenReceiverMsg::DepositToReserve => {
                     asset.reserved += amount;
                     self.internal_set_asset(&token_id, asset);
-                    events::emit::deposit_to_reserve(&sender_id, amount, &token_id);
                     return PromiseOrValue::Value(U128(0));
                 }
             }
         };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        let mut account = self.internal_unwrap_account(&sender_id);
+        let (mut account, mut storage) =
+            self.internal_unwrap_account_with_storage(sender_id.as_ref());
         account.add_affected_farm(FarmId::Supplied(token_id.clone()));
         self.internal_deposit(&mut account, &token_id, amount);
-        events::emit::deposit(&sender_id, amount, &token_id);
-        self.internal_execute(&sender_id, &mut account, actions, Prices::new());
-        self.internal_set_account(&sender_id, account);
-=======
-<<<<<<< HEAD
-        let mut account = self.internal_unwrap_account(sender_id.as_ref());
-        account.add_affected_farm(FarmId::Supplied(token_id.clone()));
-        self.internal_deposit(&mut account, &token_id, amount);
-        log!("Account {} deposits {} of {}", sender_id, amount, token_id);
-        self.internal_execute(sender_id.as_ref(), &mut account, actions, Prices::new());
-        self.internal_set_account(sender_id.as_ref(), account);
-=======
-=======
->>>>>>> 005b54c (Update to SDK 4.0.0)
-        let (mut account, mut storage) = self.internal_unwrap_account_with_storage(&sender_id);
-        account.add_affected_farm(FarmId::Supplied(token_id.clone()));
-        self.internal_deposit(&mut account, &token_id, amount);
-        log!("Account {} deposits {} of {}", sender_id, amount, token_id);
         self.internal_execute(
-            &sender_id,
+            sender_id.as_ref(),
             &mut account,
             &mut storage,
             actions,
             Prices::new(),
         );
-        self.internal_set_account(&sender_id, account, storage);
-<<<<<<< HEAD
->>>>>>> 005b54c (Update to SDK 4.0.0)
->>>>>>> 1d7cd75 (Update to SDK 4.0.0)
-=======
->>>>>>> 005b54c (Update to SDK 4.0.0)
+        self.internal_set_account(sender_id.as_ref(), account, storage);
 
         PromiseOrValue::Value(U128(0))
     }
@@ -108,7 +82,7 @@ impl Contract {
             account_id.clone(),
             ft_amount.into(),
             None,
-            token_id.clone(),
+            token_id,
             ONE_YOCTO,
             GAS_FOR_FT_TRANSFER,
         )
@@ -116,7 +90,7 @@ impl Contract {
             account_id.clone(),
             token_id.clone(),
             amount.into(),
-            env::current_account_id(),
+            &env::current_account_id(),
             NO_DEPOSIT,
             GAS_FOR_AFTER_FT_TRANSFER,
         ))
@@ -145,13 +119,10 @@ impl ExtSelf for Contract {
     ) -> bool {
         let promise_success = is_promise_success();
         if !promise_success {
-            let mut account = self.internal_unwrap_account(&account_id);
+            let (mut account, storage) = self.internal_unwrap_account_with_storage(&account_id);
             account.add_affected_farm(FarmId::Supplied(token_id.clone()));
             self.internal_deposit(&mut account, &token_id, amount.0);
-            events::emit::withdraw_failed(&account_id, amount.0, &token_id);
-            self.internal_set_account(&account_id, account);
-        } else {
-            events::emit::withdraw_succeeded(&account_id, amount.0, &token_id);
+            self.internal_set_account(&account_id, account, storage);
         }
         promise_success
     }

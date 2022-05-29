@@ -1,12 +1,9 @@
 use crate::*;
 
-pub const MS_PER_YEAR: u64 = 31536000000;
-
 static ASSETS: Lazy<Mutex<HashMap<TokenId, Option<Asset>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Clone)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Asset {
     /// Total supplied including collateral, but excluding reserved.
@@ -59,26 +56,6 @@ impl Asset {
             .get_rate(self.borrowed.balance, self.supplied.balance + self.reserved)
     }
 
-    pub fn get_borrow_apr(&self) -> BigDecimal {
-        let rate = self.get_rate();
-        rate.pow(MS_PER_YEAR) - BigDecimal::one()
-    }
-
-    pub fn get_supply_apr(&self) -> BigDecimal {
-        if self.supplied.balance == 0 || self.borrowed.balance == 0 {
-            return BigDecimal::zero();
-        }
-
-        let borrow_apr = self.get_borrow_apr();
-        if borrow_apr == BigDecimal::zero() {
-            return borrow_apr;
-        }
-
-        let interest = borrow_apr.round_mul_u128(self.borrowed.balance);
-        let supply_interest = ratio(interest, MAX_RATIO - self.config.reserve_ratio);
-        BigDecimal::from(supply_interest).div_u128(self.supplied.balance)
-    }
-
     // n = 31536000000 ms in a year (365 days)
     //
     // Compute `r` from `X`. `X` is desired APY
@@ -92,16 +69,14 @@ impl Asset {
     // n = in millis
     fn compound(&mut self, time_diff_ms: Duration) {
         let rate = self.get_rate();
+        log!("Rate is {}", rate);
         let interest =
             rate.pow(time_diff_ms).round_mul_u128(self.borrowed.balance) - self.borrowed.balance;
+        log!("Interest added: {}", interest);
         // TODO: Split interest based on ratio between reserved and supplied?
         let reserved = ratio(interest, self.config.reserve_ratio);
-        if self.supplied.shares.0 > 0 {
-            self.supplied.balance += interest - reserved;
-            self.reserved += reserved;
-        } else {
-            self.reserved += interest;
-        }
+        self.supplied.balance += interest - reserved;
+        self.reserved += reserved;
         self.borrowed.balance += interest;
     }
 
@@ -138,17 +113,7 @@ impl Contract {
         })
     }
 
-    pub fn internal_set_asset(&mut self, token_id: &TokenId, mut asset: Asset) {
-        if asset.supplied.shares.0 == 0 && asset.supplied.balance > 0 {
-            asset.reserved += asset.supplied.balance;
-            asset.supplied.balance = 0;
-        }
-        assert!(
-            asset.borrowed.shares.0 > 0 || asset.borrowed.balance == 0,
-            "Borrowed invariant broken"
-        );
-        asset.supplied.assert_invariant();
-        asset.borrowed.assert_invariant();
+    pub fn internal_set_asset(&mut self, token_id: &TokenId, asset: Asset) {
         ASSETS
             .lock()
             .unwrap()
@@ -160,19 +125,18 @@ impl Contract {
 #[near_bindgen]
 impl Contract {
     /// Returns an asset for a given token_id.
-    pub fn get_asset(&self, token_id: AccountId) -> Option<AssetDetailedView> {
-        self.internal_get_asset(&token_id)
-            .map(|asset| self.asset_into_detailed_view(token_id, asset))
+    pub fn get_asset(&self, token_id: ValidAccountId) -> Option<Asset> {
+        self.internal_get_asset(token_id.as_ref())
     }
 
     /// Returns an list of pairs (token_id, asset) for assets a given list of token_id.
     /// Only returns pais for existing assets.
-    pub fn get_assets(&self, token_ids: Vec<AccountId>) -> Vec<AssetDetailedView> {
+    pub fn get_assets(&self, token_ids: Vec<ValidAccountId>) -> Vec<(TokenId, Asset)> {
         token_ids
             .into_iter()
             .filter_map(|token_id| {
-                self.internal_get_asset(&token_id)
-                    .map(|asset| self.asset_into_detailed_view(token_id, asset))
+                self.internal_get_asset(token_id.as_ref())
+                    .map(|asset| (token_id.into(), asset))
             })
             .collect()
     }
@@ -196,20 +160,19 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_assets_paged_detailed(
+    pub fn debug_get_assets_paged(
         &self,
         from_index: Option<u64>,
         limit: Option<u64>,
-    ) -> Vec<AssetDetailedView> {
+    ) -> Vec<(TokenId, Asset)> {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
         (from_index..std::cmp::min(keys.len(), limit))
             .map(|index| {
-                let token_id = keys.get(index).unwrap();
-                let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
-                asset.update();
-                self.asset_into_detailed_view(token_id, asset)
+                let key = keys.get(index).unwrap();
+                let asset = self.assets.get(&key).unwrap().into();
+                (key, asset)
             })
             .collect()
     }
