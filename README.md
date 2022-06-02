@@ -1,4 +1,4 @@
-# Burrowland contact
+# Nearlend Contract
 
 ## How it works
 
