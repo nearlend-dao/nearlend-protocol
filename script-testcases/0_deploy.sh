@@ -3,7 +3,8 @@ export MAIN_ACCOUNT=lam-test01.testnet
 export NEAR_ENV=testnet
 export OWNER_ID=$MAIN_ACCOUNT
 # export ORACLE_ID=priceoracle.testnet
-export ORACLE_ID=price-oracle.lam-test50.testnet
+# export ORACLE_ID=price-oracle.lam-test50.testnet
+export ORACLE_ID=price-oracle.duonghb3.testnet
 export ACCOUNT_ID=$MAIN_ACCOUNT
 export CONTRACT_ID=nearlend.$MAIN_ACCOUNT
 export BOOSTER_TOKEN_ID=ref.fakes.testnet
@@ -19,6 +20,7 @@ export GAS=200000000000000
 export DECIMAL_18=000000000000000000
 export ACCOUNT_TEST=lam-test02.testnet
 
+# nearlend.lam-test01.testnet
 
 #####################################
 # - Sử dụng đồng DAI cho việc test, nếu muốn test vs các token khác thì tương tự
@@ -89,8 +91,8 @@ near call $CONTRACT_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.1
 near call $CONTRACT_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.1
 
 # Deposit WETH_TOKEN_ID
-# near call $WETH_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $WETH_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+near call $WETH_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $WETH_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
 # Deposit DAI_TOKEN_ID
 near call $DAI_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
@@ -99,12 +101,12 @@ near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.
 
 
 # Deposit USDT_TOKEN_ID
-# near call $USDT_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $USDT_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+near call $USDT_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $USDT_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
 # Deposit WNEAR_TOKEN_ID
-# near call $WNEAR_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $WNEAR_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+near call $WNEAR_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $WNEAR_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
 ###################### End B3: Deposit storage #####################
 
@@ -116,11 +118,11 @@ near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.
 #  "amount": "100000000000000000000000"
 # }'
 
-## Mint WETH_TOKEN_ID
-# near call $WETH_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
-#  "account_id": "'$ACCOUNT_ID'",
-#  "amount": "10000000000000000000"
-# }'
+# Mint WETH_TOKEN_ID
+near call $WETH_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
+ "account_id": "'$ACCOUNT_ID'",
+ "amount": "10000000000000000000"
+}'
 
 ## Mint DAI_TOKEN_ID
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
@@ -134,17 +136,17 @@ near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST mint '{
 }'
 
 # Mint USDT_TOKEN_ID
-# near call $USDT_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
-#   "account_id": "'$ACCOUNT_ID'",
-#   "amount": "10000000000"
-# }'
+near call $USDT_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
+  "account_id": "'$ACCOUNT_ID'",
+  "amount": "10000000000"
+}'
 
 ## Mint WNEAR_TOKEN_ID
-# near call $WNEAR_TOKEN_ID --accountId=$ACCOUNT_ID de '{
-#   "account_id": "'$ACCOUNT_ID'",
-#   "amount": "10000000000"
-# }'
-# near call $WNEAR_TOKEN_ID --accountId=$ACCOUNT_ID near_deposit '{}' --amount=10
+near call $WNEAR_TOKEN_ID --accountId=$ACCOUNT_ID de '{
+  "account_id": "'$ACCOUNT_ID'",
+  "amount": "10000000000"
+}'
+near call $WNEAR_TOKEN_ID --accountId=$ACCOUNT_ID near_deposit '{}' --amount=10
 
 ###################### End B4: Mint tokens #####################
 
@@ -172,23 +174,30 @@ near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST mint '{
 
 
 
-# # wETH APR is 6%, to verify run ./scripts/apr_to_rate.py 5
-# # Volatility ratio is 60%, since it's somewhat liquid on NEAR
-# near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
-#   "token_id": "'$WETH_TOKEN_ID'",
-#   "asset_config": {
-#     "reserve_ratio": 2500,
-#     "target_utilization": 8000,
-#     "target_utilization_rate": "1000000000001547125956667610",
-#     "max_utilization_rate": "1000000000039724853136740579",
-#     "volatility_ratio": 6000,
-#     "extra_decimals": 0,
-#     "can_deposit": true,
-#     "can_withdraw": true,
-#     "can_use_as_collateral": true,
-#     "can_borrow": true
-#   }
-# }' --amount=$ONE_YOCTO --gas=$GAS
+# wETH APR is 6%, to verify run ./scripts/apr_to_rate.py 5
+# Volatility ratio is 60%, since it's somewhat liquid on NEAR
+near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
+  "token_id": "'$WETH_TOKEN_ID'",
+  "asset_config": {
+    "reserve_ratio": 2500,
+    "target_utilization": 8000,
+    "target_utilization_rate": "1000000000001547125956667610",
+    "max_utilization_rate": "1000000000039724853136740579",
+    "volatility_ratio": 6000,
+    "extra_decimals": 0,
+    "can_deposit": true,
+    "can_withdraw": true,
+    "can_use_as_collateral": true,
+    "can_borrow": true
+  }
+}' --amount=$ONE_YOCTO --gas=$GAS
+
+
+# Ví dụ: 
+#     thế chấp 100 DAI = $100, đi vay 1ETH = $10 và volatility_ratio = 60%
+#     tính max có thể descrease collateral: $100 - $10/0.6 = $84   => $16 -> thế chấp
+#         => max có thể descrease collateral => $90  
+    
 
 
 # DAI APR is 4%, to verify run ./scripts/apr_to_rate.py 4
@@ -229,26 +238,29 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
   }
 }' --amount=$ONE_YOCTO --gas=$GAS
 
-# # wNEAR APR is 12%, to verify run ./scripts/apr_to_rate.py 12
-# # Target utilization is 60% (for some reason)
-# # Volatility ratio is 60%
-# near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
-#   "token_id": "'$WNEAR_TOKEN_ID'",
-#   "asset_config": {
-#     "reserve_ratio": 2500,
-#     "target_utilization": 6000,
-#     "target_utilization_rate": "1000000000003593629036885046",
-#     "max_utilization_rate": "1000000000039724853136740579",
-#     "volatility_ratio": 6000,
-#     "extra_decimals": 0,
-#     "can_deposit": true,
-#     "can_withdraw": true,
-#     "can_use_as_collateral": true,
-#     "can_borrow": true
-#   }
-# }' --amount=$ONE_YOCTO --gas=$GAS
+# wNEAR APR is 12%, to verify run ./scripts/apr_to_rate.py 12
+# Target utilization is 60% (for some reason)
+# Volatility ratio is 60%
+near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
+  "token_id": "'$WNEAR_TOKEN_ID'",
+  "asset_config": {
+    "reserve_ratio": 2500,
+    "target_utilization": 6000,
+    "target_utilization_rate": "1000000000003593629036885046",
+    "max_utilization_rate": "1000000000039724853136740579",
+    "volatility_ratio": 6000,
+    "extra_decimals": 0,
+    "can_deposit": true,
+    "can_withdraw": true,
+    "can_use_as_collateral": true,
+    "can_borrow": true
+  }
+}' --amount=$ONE_YOCTO --gas=$GAS
 
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
+near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
+
+
 
 ###################### End B5: Add asset #####################
 

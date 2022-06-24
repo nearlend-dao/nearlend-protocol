@@ -52,3 +52,4 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{"config" : {"oracle_accoun
 
 near call $CONTRACT_ID set_diff_time '{"seconds": 10}' --accountId=$OWNER_ID
 near view $CONTRACT_ID get_diff_time ''
+
