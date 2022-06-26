@@ -1,6 +1,7 @@
 use crate::*;
 
 pub const MS_PER_YEAR: u64 = 31536000000;
+pub const MAX_ITEMS: usize = 99999;
 
 static ASSETS: Lazy<Mutex<HashMap<TokenId, Option<Asset>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -13,6 +14,7 @@ pub struct Asset {
     pub supplied: Pool,
     /// Total borrowed.
     pub borrowed: Pool,
+    pub nft_supplied: Vec<NftPool> ,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
     /// borrowing rate.
     #[serde(with = "u128_dec_format")]
@@ -48,6 +50,7 @@ impl Asset {
         Self {
             supplied: Pool::new(),
             borrowed: Pool::new(),
+            nft_supplied: vec![],
             reserved: 0,
             last_update_timestamp: timestamp,
             config,
@@ -136,6 +139,20 @@ impl Contract {
             cache.insert(token_id.clone(), asset.clone());
             asset
         })
+    }
+
+    pub fn internal_set_nft_asset(&mut self, nft_contract_id: &NftContractId,  owner_id: AccountId, token_id: TokenNftId, mut asset: Asset) {
+        let index = asset.nft_supplied.iter().position(|x| *x.token_id == token_id).unwrap_or(MAX_ITEMS);
+        if  index != MAX_ITEMS  {
+            asset.nft_supplied.remove(index);
+        } 
+        asset.nft_supplied.push(NftPool { owner_id, token_id });
+        
+        ASSETS
+            .lock()
+            .unwrap()
+            .insert(nft_contract_id.clone(), Some(asset.clone()));
+        self.assets.insert(nft_contract_id, &asset.into());
     }
 
     pub fn internal_set_asset(&mut self, token_id: &TokenId, mut asset: Asset) {

@@ -12,6 +12,9 @@ pub struct AccountV0 {
     pub collateral: Vec<CollateralAsset>,
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
+
+    pub nft_supplied: UnorderedMap<NftContractId, NftSuppliedAsset>,
+
     /// Keeping track of data required for farms for this account.
     pub farms: UnorderedMap<FarmId, VAccountFarm>,
 }
@@ -23,6 +26,7 @@ impl From<AccountV0> for Account {
             supplied,
             collateral,
             borrowed,
+            nft_supplied,
             farms,
         } = a;
         Self {
@@ -30,6 +34,7 @@ impl From<AccountV0> for Account {
             supplied,
             collateral,
             borrowed,
+            nft_supplied,
             farms,
             affected_farms: Default::default(),
             storage_tracker: Default::default(),

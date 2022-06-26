@@ -12,6 +12,7 @@ mod booster_staking;
 mod config;
 mod events;
 mod fungible_token;
+mod non_fungible_token;
 mod legacy;
 mod pool;
 mod price_receiver;
@@ -20,6 +21,7 @@ mod storage;
 mod storage_tracker;
 mod upgrade;
 mod utils;
+mod nft_pool;
 
 pub use crate::account::*;
 pub use crate::account_asset::*;
@@ -34,8 +36,10 @@ pub use crate::big_decimal::*;
 pub use crate::booster_staking::*;
 pub use crate::config::*;
 pub use crate::fungible_token::*;
+pub use crate::non_fungible_token::*;
 pub use crate::legacy::*;
 pub use crate::pool::*;
+pub use crate::nft_pool::*;
 pub use crate::price_receiver::*;
 pub use crate::prices::*;
 pub use crate::storage::*;
@@ -67,6 +71,7 @@ enum StorageKey {
     InactiveAssetFarmRewards { farm_id: FarmId },
     AssetIds,
     Config,
+    AccountNftAssets { account_id: AccountId },
 }
 
 #[near_bindgen]

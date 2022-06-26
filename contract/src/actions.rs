@@ -148,6 +148,16 @@ impl Contract {
         shares
     }
 
+    pub fn internal_nft_deposit(
+        &mut self,
+        account: &mut Account,
+        nft_contract_id: &NftContractId,
+        token_id: &TokenNftId,
+    ) {
+        let mut nft_asset = self.internal_unwrap_asset(nft_contract_id);
+        let mut account_nft_asset = account.internal_get_asset_or_default(nft_contract_id);
+    }
+
     pub fn internal_withdraw(
         &mut self,
         account: &mut Account,

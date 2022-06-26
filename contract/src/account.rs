@@ -13,6 +13,10 @@ pub struct Account {
     pub collateral: Vec<CollateralAsset>,
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
+
+    #[serde(skip_serializing)]
+    pub nft_supplied: UnorderedMap<NftContractId, NftSuppliedAsset>,
+
     /// Keeping track of data required for farms for this account.
     #[serde(skip_serializing)]
     pub farms: UnorderedMap<FarmId, VAccountFarm>,
@@ -55,6 +59,9 @@ impl Account {
         Self {
             account_id: account_id.clone(),
             supplied: UnorderedMap::new(StorageKey::AccountAssets {
+                account_id: account_id.clone(),
+            }),
+            nft_supplied: UnorderedMap::new(StorageKey::AccountNftAssets {
                 account_id: account_id.clone(),
             }),
             collateral: vec![],
@@ -200,6 +207,17 @@ pub struct BorrowedAsset {
     pub token_id: TokenId,
     pub shares: Shares,
 }
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct NftSuppliedAsset {
+    pub nft_contract_id: NftContractId,
+    pub token_id: TokenNftId,
+    pub ft_contract_id: TokenId,
+    pub amount: u128,
+    pub time_borrow: Timestamp,
+}
+
 
 impl Contract {
     pub fn internal_get_account(&self, account_id: &AccountId) -> Option<Account> {

@@ -1,6 +1,13 @@
 {
+  "0 - Contract": {
+    "accounts - UnorderedMap<AccountId, VAccount>": "",
+    "storage - LookupMap<AccountId, VStorage>": "",
+    "assets - LookupMap<TokenId, VAsset>": "",
+    "asset_farms - LookupMap<FarmId, VAssetFarm>": "",
+    "asset_ids - UnorderedSet<TokenId>": "",
+    "config - LazyOption<Config>": ""
+  },
   "1 - Asset": {
-    "__comment__": "This is asset structure",
     "supplied - <Pool>": {
       "shared": "u128",
       "balance": "u128"

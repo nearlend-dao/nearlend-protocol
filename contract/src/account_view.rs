@@ -16,6 +16,22 @@ pub struct AssetView {
 #[derive(Serialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
 #[serde(crate = "near_sdk::serde")]
+pub struct AssetNftView {
+    pub nft_contract_id: NftContractId,
+    pub token_id: TokenNftId,
+    pub ft_contract_id: TokenId,
+    #[serde(with = "u128_dec_format")]
+    pub balance: Balance,
+    /// The number of shares this account holds in the corresponding asset pool
+    pub admount: Balance,
+    pub time_borrow: Timestamp,
+    /// The current APR for this asset (either supply or borrow APR).
+    pub apr: BigDecimal,
+}
+
+#[derive(Serialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[serde(crate = "near_sdk::serde")]
 pub struct AccountDetailedView {
     pub account_id: AccountId,
     /// A list of assets that are supplied by the account (but not used a collateral).
