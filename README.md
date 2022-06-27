@@ -22,7 +22,7 @@ To compute the APR, we can use the following formula:
 
 Based on the current supplied, reserved and borrowed balances, the current utilization is defined using the following formula:
 
-`utilization = (supplied + reserved) / borrowed`
+`utilization = borrowed / (supplied + reserved)`
 
 To compute current APR, we need to find the current `r` constant based on the linear interpolation between utilization points:
 
