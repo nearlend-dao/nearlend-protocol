@@ -16,8 +16,17 @@ pub struct AssetAmount {
 #[derive(Deserialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Serialize))]
 #[serde(crate = "near_sdk::serde")]
+pub struct NFTAsset {
+    pub nft_contract_id: NftContractId,
+    pub token_id: TokenNftId,
+}
+
+#[derive(Deserialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Serialize))]
+#[serde(crate = "near_sdk::serde")]
 pub enum Action {
     Withdraw(AssetAmount),
+    WithdrawNFT(NFTAsset),
     IncreaseCollateral(AssetAmount),
     DecreaseCollateral(AssetAmount),
     Borrow(AssetAmount),
@@ -51,6 +60,20 @@ impl Contract {
                     let amount = self.internal_withdraw(account, &asset_amount);
                     self.internal_ft_transfer(account_id, &asset_amount.token_id, amount);
                     events::emit::withdraw_started(&account_id, amount, &asset_amount.token_id);
+                }
+                Action::WithdrawNFT(nft_asset) => {
+                    account.add_affected_farm(FarmId::Supplied(nft_asset.nft_contract_id.clone()));
+                    self.internal_withdraw_nft(account, &nft_asset);
+                    self.internal_nft_transfer(
+                        account_id,
+                        &nft_asset.nft_contract_id,
+                        &nft_asset.token_id,
+                    );
+                    events::emit::withdraw_nft_started(
+                        &account_id,
+                        &nft_asset.nft_contract_id,
+                        &nft_asset.token_id,
+                    );
                 }
                 Action::IncreaseCollateral(asset_amount) => {
                     need_number_check = true;
@@ -190,6 +213,17 @@ impl Contract {
         self.internal_set_asset(&asset_amount.token_id, asset);
 
         amount
+    }
+
+    pub fn internal_withdraw_nft(&mut self, account: &mut Account, nft_asset: &NFTAsset) {
+        let mut asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
+
+        assert!(
+            asset.config.can_withdraw,
+            "Withdrawals for this asset are not enabled"
+        );
+
+        // TODO: Update the account nft supplied, remove the NFT from NftSuppliedAsset
     }
 
     pub fn internal_increase_collateral(
