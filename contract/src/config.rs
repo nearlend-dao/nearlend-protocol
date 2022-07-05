@@ -2,6 +2,8 @@ use crate::*;
 
 pub const MIN_BOOSTER_MULTIPLIER: u32 = 10000;
 
+pub const NFT_DELIMETER: &str = "@";
+
 /// Contract config
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]

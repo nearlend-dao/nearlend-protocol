@@ -1,8 +1,9 @@
 use crate::*;
 
 pub(crate) type TokenId = AccountId;
-pub(crate) type NftContractId = AccountId;
-pub(crate) type TokenNftId = String;
+pub(crate) type NFTContractId = AccountId;
+pub(crate) type NFTTokenId = String;
+pub(crate) type NFTContractTokenId = String;
 
 pub(crate) fn unordered_map_pagination<K, VV, V>(
     m: &UnorderedMap<K, VV>,

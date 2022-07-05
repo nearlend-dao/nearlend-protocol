@@ -26,7 +26,7 @@ trait ExtSelf {
     fn after_nft_transfer(
         &mut self,
         account_id: AccountId,
-        nft_contract_id: NftContractId,
+        nft_contract_id: NFTContractId,
         token_id: TokenId,
     ) -> bool;
 }
@@ -35,7 +35,7 @@ trait ExtSelf {
     fn after_nft_transfer(
         &mut self,
         account_id: AccountId,
-        nft_contract_id: NftContractId,
+        nft_contract_id: NFTContractId,
         token_id: TokenId,
     ) -> bool;
 }
@@ -58,7 +58,12 @@ impl NonFungibleTokenReceiver for Contract {
 
         let mut account = self.internal_unwrap_account(&sender_id);
         account.add_affected_farm(FarmId::Supplied(nft_contract_id.clone()));
+
+        // Add NFT to the account assets
         self.internal_nft_deposit(&mut account, &nft_contract_id, &token_id);
+
+        // Save all change to the account
+        self.internal_set_account(&sender_id, account);
 
         log!(
             "in nft_on_transfer; sender_id={}, previous_owner_id={}, token_id={}, msg={}",
@@ -68,6 +73,8 @@ impl NonFungibleTokenReceiver for Contract {
             msg
         );
         log!("====> message from sender: {:?}", msg);
+
+        // Add NFT to asset
         self.internal_set_nft_asset(&nft_contract_id, sender_id, token_id, asset);
         PromiseOrValue::Value(false)
     }
@@ -78,8 +85,8 @@ impl Contract {
     pub fn internal_nft_transfer(
         &mut self,
         account_id: &AccountId,
-        nft_contract_id: &NftContractId,
-        token_id: &TokenNftId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
     ) -> Promise {
         log!(
             "======> nft_transfer: nft_contract_id: {:?}, token_id: {:?}, receiver_id {:?}",
@@ -115,8 +122,8 @@ impl ExtSelf for Contract {
     fn after_nft_transfer(
         &mut self,
         account_id: AccountId,
-        nft_contract_id: NftContractId,
-        token_id: TokenId,
+        nft_contract_id: NFTContractId,
+        token_id: NFTTokenId,
     ) -> bool {
         let promise_success = is_promise_success();
         if !promise_success {

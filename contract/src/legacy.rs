@@ -13,7 +13,7 @@ pub struct AccountV0 {
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
 
-    pub nft_supplied: UnorderedMap<NftContractId, NftSuppliedAsset>,
+    pub nft_supplied: UnorderedSet<NFTContractTokenId>,
 
     /// Keeping track of data required for farms for this account.
     pub farms: UnorderedMap<FarmId, VAccountFarm>,

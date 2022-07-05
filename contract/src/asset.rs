@@ -14,7 +14,7 @@ pub struct Asset {
     pub supplied: Pool,
     /// Total borrowed.
     pub borrowed: Pool,
-    pub nft_supplied: Vec<NftPool> ,
+    pub nft_supplied: Vec<NftPool>,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
     /// borrowing rate.
     #[serde(with = "u128_dec_format")]
@@ -121,6 +121,22 @@ impl Asset {
     pub fn available_amount(&self) -> Balance {
         self.supplied.balance + self.reserved - self.borrowed.balance
     }
+
+    /// Get the NFT owner from asset NFT pool
+    pub fn get_owner_nft(&self, token_id: &NFTTokenId, asset: &Asset) -> Option<AccountId> {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id.clone())
+            .unwrap_or(MAX_ITEMS);
+
+        if index != MAX_ITEMS {
+            let nft_pool = asset.nft_supplied.get(index).unwrap();
+            return Some(nft_pool.owner_id.clone());
+        }
+
+        None
+    }
 }
 
 impl Contract {
@@ -141,13 +157,49 @@ impl Contract {
         })
     }
 
-    pub fn internal_set_nft_asset(&mut self, nft_contract_id: &NftContractId,  owner_id: AccountId, token_id: TokenNftId, mut asset: Asset) {
-        let index = asset.nft_supplied.iter().position(|x| *x.token_id == token_id).unwrap_or(MAX_ITEMS);
-        if  index != MAX_ITEMS  {
+    pub fn internal_set_nft_asset(
+        &mut self,
+        nft_contract_id: &NFTContractId,
+        owner_id: AccountId,
+        token_id: NFTTokenId,
+        mut asset: Asset,
+    ) {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id)
+            .unwrap_or(MAX_ITEMS);
+        if index != MAX_ITEMS {
             asset.nft_supplied.remove(index);
-        } 
-        asset.nft_supplied.push(NftPool { owner_id, token_id });
-        
+        }
+
+        asset.nft_supplied.push(NftPool {
+            owner_id,
+            token_id: token_id,
+        });
+
+        ASSETS
+            .lock()
+            .unwrap()
+            .insert(nft_contract_id.clone(), Some(asset.clone()));
+        self.assets.insert(nft_contract_id, &asset.into());
+    }
+
+    pub fn internal_remove_nft_asset(
+        &mut self,
+        nft_contract_id: &NFTContractId,
+        token_id: NFTTokenId,
+        mut asset: Asset,
+    ) {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id)
+            .unwrap_or(MAX_ITEMS);
+        if index != MAX_ITEMS {
+            asset.nft_supplied.remove(index);
+        }
+
         ASSETS
             .lock()
             .unwrap()

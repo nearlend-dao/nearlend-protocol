@@ -5,7 +5,7 @@ use crate::*;
 #[serde(crate = "near_sdk::serde")]
 pub struct NftPool {
     pub owner_id: AccountId,
-    pub token_id: TokenNftId,
+    pub token_id: NFTTokenId,
 }
 
 impl NftPool {
@@ -16,9 +16,7 @@ impl NftPool {
         }
     }
 
-    pub fn deposit(&mut self, owner_id: AccountId, token_id: TokenNftId) {
-    }
+    pub fn deposit(&mut self, owner_id: AccountId, token_id: NFTTokenId) {}
 
-    pub fn withdraw(&mut self, owner_id: AccountId, token_id: TokenNftId) {
-    }
+    pub fn withdraw(&mut self, owner_id: AccountId, token_id: NFTTokenId) {}
 }

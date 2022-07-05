@@ -13,13 +13,12 @@ pub mod emit {
         pub token_id: &'a TokenId,
     }
 
-    
     #[derive(Serialize)]
     #[serde(crate = "near_sdk::serde")]
     struct AccountNFTToken<'a> {
         pub account_id: &'a AccountId,
-        pub nft_contract_id: &'a NftContractId,
-        pub token_id: &'a TokenNftId,
+        pub nft_contract_id: &'a NFTContractId,
+        pub token_id: &'a NFTTokenId,
     }
 
     fn log_event<T: Serialize>(event: &str, data: T) {
@@ -88,7 +87,11 @@ pub mod emit {
         );
     }
 
-    pub fn withdraw_nft_started(account_id: &AccountId, nft_contract_id: &NftContractId, token_id: &TokenNftId) {
+    pub fn withdraw_nft_started(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
         log_event(
             "withdraw_nft_started",
             AccountNFTToken {
@@ -99,7 +102,11 @@ pub mod emit {
         );
     }
 
-    pub fn withdraw_nft_failed(account_id: &AccountId, nft_contract_id: &NftContractId, token_id: &TokenNftId) {
+    pub fn withdraw_nft_failed(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
         log_event(
             "withdraw_nft_failed",
             AccountNFTToken {
@@ -110,7 +117,11 @@ pub mod emit {
         );
     }
 
-    pub fn withdraw_nft_succeeded(account_id: &AccountId, nft_contract_id: &NftContractId, token_id: &TokenNftId) {
+    pub fn withdraw_nft_succeeded(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
         log_event(
             "withdraw_nft_succeeded",
             AccountNFTToken {

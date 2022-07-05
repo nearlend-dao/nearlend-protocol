@@ -17,8 +17,8 @@ pub struct AssetAmount {
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Serialize))]
 #[serde(crate = "near_sdk::serde")]
 pub struct NFTAsset {
-    pub nft_contract_id: NftContractId,
-    pub token_id: TokenNftId,
+    pub nft_contract_id: NFTContractId,
+    pub token_id: NFTTokenId,
 }
 
 #[derive(Deserialize)]
@@ -62,8 +62,8 @@ impl Contract {
                     events::emit::withdraw_started(&account_id, amount, &asset_amount.token_id);
                 }
                 Action::WithdrawNFT(nft_asset) => {
-                    account.add_affected_farm(FarmId::Supplied(nft_asset.nft_contract_id.clone()));
-                    self.internal_withdraw_nft(account, &nft_asset);
+                    // account.add_affected_farm(FarmId::Supplied(nft_asset.nft_contract_id.clone()));
+                    self.internal_withdraw_nft(account_id, account, &nft_asset);
                     self.internal_nft_transfer(
                         account_id,
                         &nft_asset.nft_contract_id,
@@ -174,11 +174,25 @@ impl Contract {
     pub fn internal_nft_deposit(
         &mut self,
         account: &mut Account,
-        nft_contract_id: &NftContractId,
-        token_id: &TokenNftId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
     ) {
-        let mut nft_asset = self.internal_unwrap_asset(nft_contract_id);
-        let mut account_nft_asset = account.internal_get_asset_or_default(nft_contract_id);
+        // let mut nft_asset = self.internal_unwrap_asset(nft_contract_id);
+        // let mut account_nft_asset = account.internal_get_asset_or_default(nft_contract_id);
+
+        let contract_nft_token_id: NFTContractTokenId =
+            format!("{}{}{}", nft_contract_id, NFT_DELIMETER, token_id);
+
+        // Add NFT to the account asset
+        account.nft_supplied.insert(&contract_nft_token_id);
+
+        // Add NFT to the asset
+        // self.internal_set_nft_asset(
+        //     nft_contract_id,
+        //     owner_id.clone(),
+        //     token_id.clone(),
+        //     nft_asset,
+        // );
     }
 
     pub fn internal_withdraw(
@@ -215,7 +229,12 @@ impl Contract {
         amount
     }
 
-    pub fn internal_withdraw_nft(&mut self, account: &mut Account, nft_asset: &NFTAsset) {
+    pub fn internal_withdraw_nft(
+        &mut self,
+        account_id: &AccountId,
+        account: &mut Account,
+        nft_asset: &NFTAsset,
+    ) {
         let mut asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
 
         assert!(
@@ -223,7 +242,31 @@ impl Contract {
             "Withdrawals for this asset are not enabled"
         );
 
-        // TODO: Update the account nft supplied, remove the NFT from NftSuppliedAsset
+        // Check accoount is NFT owner before withdraw
+        if let Some(owner_id) = asset.get_owner_nft(&nft_asset.token_id, &asset) {
+            assert_eq!(
+                account_id.clone(),
+                owner_id,
+                "You are not authorized. You must be using the owner account {} to withdraw this NFT",
+                owner_id
+            );
+        } else {
+            env::panic_str("NFT not found in the NFT pool");
+        }
+
+        // Remove NFT from account asset
+        let contract_nft_token_id: NFTContractTokenId = format!(
+            "{}{}{}",
+            nft_asset.nft_contract_id, NFT_DELIMETER, nft_asset.token_id
+        );
+        account.nft_supplied.remove(&contract_nft_token_id);
+
+        // Remove NFT from asset
+        self.internal_remove_nft_asset(
+            &nft_asset.nft_contract_id,
+            nft_asset.token_id.clone(),
+            asset,
+        );
     }
 
     pub fn internal_increase_collateral(
