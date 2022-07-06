@@ -1,3 +1,5 @@
+use std::{convert::TryFrom, ops::Add};
+
 use crate::*;
 
 #[derive(Deserialize)]
@@ -561,6 +563,28 @@ impl Contract {
                 .mul_ratio(asset.config.volatility_ratio)
             });
 
+        let nft_collateral_sum = account
+            .nft_supplied
+            .iter()
+            .fold(BigDecimal::zero(), |sum, c| {
+                let contract_token_id_split: Vec<&str> = c.split(NFT_DELIMETER).collect();
+
+                let contract_nft_id = AccountId::try_from(contract_token_id_split[0].to_string())
+                    .expect("Can't parse NFT contract id");
+
+                let asset = self.internal_unwrap_asset(&contract_nft_id);
+
+                // Fix NFT balance is 1 (decimals 24)
+                let balance = 1 * 10u128.pow(24);
+                return sum
+                    + BigDecimal::from_balance_price(
+                        balance,
+                        prices.get_unwrap(&contract_nft_id),
+                        asset.config.extra_decimals,
+                    )
+                    .mul_ratio(asset.config.volatility_ratio);
+            });
+
         let borrowed_sum = account.borrowed.iter().fold(BigDecimal::zero(), |sum, b| {
             let asset = self.internal_unwrap_asset(&b.token_id);
             let balance = asset.borrowed.shares_to_amount(b.shares, true);
@@ -572,11 +596,19 @@ impl Contract {
             .div_ratio(asset.config.volatility_ratio)
         });
 
-        if borrowed_sum <= collateral_sum {
+        let total_collateral_sum = collateral_sum.add(nft_collateral_sum);
+
+        if borrowed_sum <= total_collateral_sum {
             BigDecimal::zero()
         } else {
-            (borrowed_sum - collateral_sum) / borrowed_sum / BigDecimal::from(2u32)
+            (borrowed_sum - total_collateral_sum) / borrowed_sum / BigDecimal::from(2u32)
         }
+
+        // if borrowed_sum <= collateral_sum {
+        //     BigDecimal::zero()
+        // } else {
+        //     (borrowed_sum - collateral_sum) / borrowed_sum / BigDecimal::from(2u32)
+        // }
     }
 }
 
