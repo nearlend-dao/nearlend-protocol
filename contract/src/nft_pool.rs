@@ -18,8 +18,4 @@ impl NftPool {
             deposit_timestamp: env::block_timestamp(),
         }
     }
-
-    pub fn deposit(&mut self, owner_id: AccountId, token_id: NFTTokenId) {}
-
-    pub fn withdraw(&mut self, owner_id: AccountId, token_id: NFTTokenId) {}
 }

@@ -64,6 +64,7 @@ impl Contract {
                     events::emit::withdraw_started(&account_id, amount, &asset_amount.token_id);
                 }
                 Action::WithdrawNFT(nft_asset) => {
+                    need_risk_check = true;
                     // account.add_affected_farm(FarmId::Supplied(nft_asset.nft_contract_id.clone()));
                     self.internal_withdraw_nft(account_id, account, &nft_asset);
                     self.internal_nft_transfer(
@@ -237,7 +238,7 @@ impl Contract {
         account: &mut Account,
         nft_asset: &NFTAsset,
     ) {
-        let mut asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
+        let asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
 
         assert!(
             asset.config.can_withdraw,

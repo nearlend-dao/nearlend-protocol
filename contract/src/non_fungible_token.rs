@@ -73,9 +73,8 @@ impl NonFungibleTokenReceiver for Contract {
             msg
         );
         log!("====> message from sender: {:?}", msg);
-
         // Add NFT to asset
-        self.internal_set_nft_asset(&nft_contract_id, sender_id, token_id, asset);
+        self.internal_set_nft_asset(&nft_contract_id, sender_id.clone(), token_id.clone(), asset);
         PromiseOrValue::Value(false)
     }
 }
