@@ -176,6 +176,7 @@ impl Contract {
         asset.nft_supplied.push(NftPool {
             owner_id,
             token_id: token_id,
+            deposit_timestamp: env::block_timestamp(),
         });
 
         ASSETS

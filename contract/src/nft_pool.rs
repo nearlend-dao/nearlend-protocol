@@ -6,6 +6,8 @@ use crate::*;
 pub struct NftPool {
     pub owner_id: AccountId,
     pub token_id: NFTTokenId,
+    #[serde(with = "u64_dec_format")]
+    pub deposit_timestamp: Timestamp,
 }
 
 impl NftPool {
@@ -13,6 +15,7 @@ impl NftPool {
         Self {
             owner_id: env::current_account_id(),
             token_id: String::from('0'),
+            deposit_timestamp: env::block_timestamp(),
         }
     }
 
