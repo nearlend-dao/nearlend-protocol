@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export MAIN_ACCOUNT=lam-test6.testnet
+export MAIN_ACCOUNT=lam-test11.testnet
 export NEAR_ENV=testnet
 export OWNER_ID=$MAIN_ACCOUNT
 export ORACLE_ID=priceoracle.testnet
@@ -44,3 +44,12 @@ near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}'
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
 ###################### End B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
+
+near call $DAI_TOKEN_ID --accountId=$OWNER_ID ft_transfer_call '{
+  "receiver_id": "'$CONTRACT_ID'",
+  "amount": "10'$DECIMAL_18'",
+  "msg": "{\"Execute\": {\"actions\": [{\"IncreaseCollateral\": {\"token_id\": \"'$DAI_TOKEN_ID'\", \"amount\": \"10'$DECIMAL_18'\"}}]}}"
+}' --amount=$ONE_YOCTO --gas=$GAS
+
+near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 
+near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'

@@ -86,28 +86,28 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
 # near call $BOOSTER_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
 # near call $BOOSTER_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
-# # Deposit CONTRACT_ID
-# near call $CONTRACT_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.1
-# near call $CONTRACT_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.1
-# near call $CONTRACT_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.1
+# Deposit CONTRACT_ID
+near call $CONTRACT_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.1
+near call $CONTRACT_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.1
+near call $CONTRACT_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.1
 
-# # Deposit WETH_TOKEN_ID
-# near call $WETH_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $WETH_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+# Deposit WETH_TOKEN_ID
+near call $WETH_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $WETH_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
-# # Deposit DAI_TOKEN_ID
-# near call $DAI_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $DAI_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
-# near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.00125
+# Deposit DAI_TOKEN_ID
+near call $DAI_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $DAI_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.00125
 
 
-# # Deposit USDT_TOKEN_ID
-# near call $USDT_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $USDT_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+# Deposit USDT_TOKEN_ID
+near call $USDT_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $USDT_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
-# # Deposit WNEAR_TOKEN_ID
-# near call $WNEAR_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $WNEAR_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+# Deposit WNEAR_TOKEN_ID
+near call $WNEAR_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $WNEAR_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
 ###################### End B3: Deposit storage #####################
 
@@ -120,27 +120,27 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
 # }'
 
 # Mint WETH_TOKEN_ID
-# near call $WETH_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
-#  "account_id": "'$ACCOUNT_ID'",
-#  "amount": "10000000000000000000"
-# }'
+near call $WETH_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
+ "account_id": "'$ACCOUNT_ID'",
+ "amount": "10000000000000000000"
+}'
 
-# ## Mint DAI_TOKEN_ID
-# near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
-#   "account_id": "'$ACCOUNT_ID'",
-#   "amount": "100000000000000000000000"
-# }'
+## Mint DAI_TOKEN_ID
+near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
+  "account_id": "'$ACCOUNT_ID'",
+  "amount": "100000000000000000000000"
+}'
 
-# near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST mint '{
-#   "account_id": "'$ACCOUNT_TEST'",
-#   "amount": "100000000000000000000000"
-# }'
+near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST mint '{
+  "account_id": "'$ACCOUNT_TEST'",
+  "amount": "100000000000000000000000"
+}'
 
-# # Mint USDT_TOKEN_ID
-# near call $USDT_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
-#   "account_id": "'$ACCOUNT_ID'",
-#   "amount": "10000000000"
-# }'
+# Mint USDT_TOKEN_ID
+near call $USDT_TOKEN_ID --accountId=$ACCOUNT_ID mint '{
+  "account_id": "'$ACCOUNT_ID'",
+  "amount": "10000000000"
+}'
 
 # ## Mint WNEAR_TOKEN_ID
 # near call $WNEAR_TOKEN_ID --accountId=$ACCOUNT_ID de '{
@@ -281,19 +281,4 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
 
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
-
-
-near call $NFT_CONTRACT_ID nft_transfer_call '{
-    "token_id": "2",
-    "receiver_id": "'$CONTRACT_ID'",
-    "approval_id": 0,
-    "memo": "memo",
-    "msg": "{\"creator\": \"'$ACCOUNT_TEST'\",\"owner_id\": \"'$CONTRACT_ID'\",\"contract_token_id\": \"'$NFT_TOKEN'\", \"collateral_account_id\": \"'$ACCOUNT_TEST'\",\"token_id\": \"3\",\"config_meta_data\": {\"token_loan_id\": \"'$DAI_TOKEN_ID'\",\"description\": \"descriptions\",\"loan\": \"2'$DECIMAL_18'\",\"duration\": 4800,\"decimals\": 18,\"interest_rate\": 5000}}"
-}' --accountId $ACCOUNT_TEST --depositYocto 1 --gas 75000000000000
-
 ###################### End B5: Add asset #####################
-
-
-# cannon grab august tent wide grit type walnut manual erupt town cat
-# claim napkin green throw flat topic arctic place era butter culture split
-# rapid outside head budget blush weather hungry fish hundred sun credit garage lam-test11.testnet  
