@@ -1,13 +1,8 @@
 use crate::*;
 use near_contract_standards::non_fungible_token::core::NonFungibleTokenReceiver;
 use near_contract_standards::non_fungible_token::TokenId;
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{
-    env, is_promise_success, log, near_bindgen, require, AccountId, Gas, PanicOnDefault,
-    PromiseOrValue,
-};
+use near_sdk::{env, is_promise_success, log, near_bindgen, AccountId, Gas, PromiseOrValue};
 
-// const GAS_FOR_NFT_TRANSFER: Gas = Gas(Gas::ONE_TERA.0 * 20);
 const GAS_FOR_NFT_TRANSFER: Gas = Gas(10_000_000_000_000); // Gas(BASE_GAS) + Gas(PROMISE_CALL);
 
 #[ext_contract(ext_nft_contract)]
