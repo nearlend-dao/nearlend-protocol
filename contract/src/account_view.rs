@@ -13,21 +13,14 @@ pub struct AssetView {
     pub apr: BigDecimal,
 }
 
-// #[derive(Serialize)]
-// #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
-// #[serde(crate = "near_sdk::serde")]
-// pub struct AssetNftView {
-//     pub nft_contract_id: NFTContractId,
-//     pub token_id: NFTTokenId,
-//     pub ft_contract_id: TokenId,
-//     #[serde(with = "u128_dec_format")]
-//     pub balance: Balance,
-//     /// The number of shares this account holds in the corresponding asset pool
-//     pub admount: Balance,
-//     pub time_borrow: Timestamp,
-//     /// The current APR for this asset (either supply or borrow APR).
-//     pub apr: BigDecimal,
-// }
+#[derive(Serialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[serde(crate = "near_sdk::serde")]
+pub struct AssetNFTView {
+    pub nft_contract_id: NFTContractId,
+    pub nft_token_id: NFTTokenId,
+    pub deposit_timestamp: Timestamp,
+}
 
 #[derive(Serialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
@@ -37,7 +30,7 @@ pub struct AccountDetailedView {
     /// A list of assets that are supplied by the account used as collateral.
     pub supplied: Vec<AssetView>,
     /// A list of nft assets that are supplied by the account used a collateral.
-    pub nft_supplied: Vec<NFTContractTokenId>,
+    pub nft_supplied: Vec<AssetNFTView>,
     /// A list of assets that are borrowed.
     pub borrowed: Vec<AssetView>,
     /// Account farms
@@ -126,7 +119,25 @@ impl Contract {
                     self.get_asset_view(token_id, shares, false)
                 })
                 .collect(),
-            nft_supplied: account.nft_supplied.iter().map(|x| x).collect(),
+            nft_supplied: unordered_map_pagination(&account.nft_supplied, None, None)
+                .into_iter()
+                .map(
+                    |(
+                        _,
+                        AccountNFTAsset {
+                            nft_contract_id,
+                            nft_token_id,
+                            deposit_timestamp,
+                        },
+                    )| {
+                        AssetNFTView {
+                            nft_contract_id,
+                            nft_token_id,
+                            deposit_timestamp,
+                        }
+                    },
+                )
+                .collect(),
             borrowed: account
                 .borrowed
                 .into_iter()

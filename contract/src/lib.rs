@@ -1,6 +1,7 @@
 mod account;
 mod account_asset;
 mod account_farm;
+mod account_nft_asset;
 mod account_view;
 mod actions;
 mod asset;
@@ -26,6 +27,7 @@ mod utils;
 pub use crate::account::*;
 pub use crate::account_asset::*;
 pub use crate::account_farm::*;
+pub use crate::account_nft_asset::*;
 pub use crate::account_view::*;
 pub use crate::actions::*;
 pub use crate::asset::*;

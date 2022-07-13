@@ -1,4 +1,4 @@
-use std::{convert::TryFrom, ops::Add};
+use std::ops::Add;
 
 use crate::*;
 
@@ -162,14 +162,17 @@ impl Contract {
         nft_contract_id: &NFTContractId,
         token_id: &NFTTokenId,
     ) {
-        // let mut nft_asset = self.internal_unwrap_asset(nft_contract_id);
-        // let mut account_nft_asset = account.internal_get_asset_or_default(nft_contract_id);
-
-        let contract_nft_token_id: NFTContractTokenId =
+        // Add NFT to the account asset
+        let nft_contract_token_id: NFTContractTokenId =
             format!("{}{}{}", nft_contract_id, NFT_DELIMETER, token_id);
 
-        // Add NFT to the account asset
-        account.nft_supplied.insert(&contract_nft_token_id);
+        let mut account_nft_asset =
+            account.internal_get_nft_asset_or_default(&nft_contract_token_id);
+        account_nft_asset.nft_contract_id = nft_contract_id.clone();
+        account_nft_asset.nft_token_id = token_id.clone();
+        account_nft_asset.deposit_timestamp = env::block_timestamp();
+
+        account.internal_set_nft_asset(&nft_contract_token_id, account_nft_asset)
 
         // Add NFT to the asset
         // self.internal_set_nft_asset(
@@ -539,27 +542,30 @@ impl Contract {
                 },
             );
 
-        let nft_collateral_sum = account
-            .nft_supplied
-            .iter()
-            .fold(BigDecimal::zero(), |sum, c| {
-                let contract_token_id_split: Vec<&str> = c.split(NFT_DELIMETER).collect();
-
-                let contract_nft_id = AccountId::try_from(contract_token_id_split[0].to_string())
-                    .expect("Can't parse NFT contract id");
-
-                let asset = self.internal_unwrap_asset(&contract_nft_id);
+        let nft_collateral_sum = account.nft_supplied.iter().fold(
+            BigDecimal::zero(),
+            |sum,
+             (
+                _,
+                AccountNFTAsset {
+                    nft_contract_id,
+                    nft_token_id: _,
+                    deposit_timestamp: _,
+                },
+            )| {
+                let asset = self.internal_unwrap_asset(&nft_contract_id);
 
                 // Fix NFT balance is 1 (decimals 24)
                 let balance = 1 * 10u128.pow(24);
                 return sum
                     + BigDecimal::from_balance_price(
                         balance,
-                        prices.get_unwrap(&contract_nft_id),
+                        prices.get_unwrap(&nft_contract_id),
                         asset.config.extra_decimals,
                     )
                     .mul_ratio(asset.config.volatility_ratio);
-            });
+            },
+        );
 
         let borrowed_sum = account.borrowed.iter().fold(BigDecimal::zero(), |sum, b| {
             let asset = self.internal_unwrap_asset(&b.token_id);
