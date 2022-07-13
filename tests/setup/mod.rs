@@ -13,44 +13,44 @@ use near_sdk_sim::{
 use contract::FarmId;
 pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
-    ContractContract as BurrowlandContract, PriceReceiverMsg, TokenReceiverMsg,
+    ContractContract as NearlendContract, PriceReceiverMsg, TokenReceiverMsg,
 };
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
-    BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
-    BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
-    BURROWLAND_0_4_0_WASM_BYTES => "res/burrowland_0.4.0.wasm",
-    BURROWLAND_PREVIOUS_WASM_BYTES => "res/burrowland_0.5.1.wasm",
+    NEARLEND_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_4_0_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol.wasm",
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
-
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
-pub fn burrowland_0_3_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_3_0_WASM_BYTES
+pub fn nearlend_0_3_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_3_0_WASM_BYTES
 }
 
-pub fn burrowland_0_4_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_4_0_WASM_BYTES
+pub fn nearlend_0_4_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_4_0_WASM_BYTES
 }
 
-pub fn burrowland_previous_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_PREVIOUS_WASM_BYTES
+pub fn nearlend_previous_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_PREVIOUS_WASM_BYTES
 }
 
-pub fn burrowland_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_WASM_BYTES
+pub fn nearlend_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_WASM_BYTES
 }
 
 pub const NEAR: &str = "near";
 pub const ORACLE_ID: &str = "oracle.near";
-pub const BURROWLAND_ID: &str = "burrowland.near";
-pub const BOOSTER_TOKEN_ID: &str = "token.burrowland.near";
+pub const NEARLEND_ID: &str = "nearlend.near";
+pub const BOOSTER_TOKEN_ID: &str = "token.nearlend.near";
 pub const OWNER_ID: &str = "owner.near";
 
-pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
+// pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
+pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 100);
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 pub const BOOSTER_TOKEN_DECIMALS: u8 = 18;
 pub const BOOSTER_TOKEN_TOTAL_SUPPLY: Balance =
@@ -69,7 +69,7 @@ pub struct Env {
     pub near: UserAccount,
     pub owner: UserAccount,
     pub oracle: ContractAccount<OracleContract>,
-    pub contract: ContractAccount<BurrowlandContract>,
+    pub contract: ContractAccount<NearlendContract>,
     pub booster_token: UserAccount,
 }
 
@@ -146,8 +146,8 @@ impl Env {
         );
 
         let contract = deploy!(
-            contract: BurrowlandContract,
-            contract_id: BURROWLAND_ID.to_string(),
+            contract: NearlendContract,
+            contract_id: NEARLEND_ID.to_string(),
             bytes: &contract_bytes,
             signer_account: near,
             deposit: to_yocto("20"),
@@ -192,7 +192,7 @@ impl Env {
             DEFAULT_GAS.0,
         );
 
-        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(BURROWLAND_ID));
+        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
 
         Self {
             root,
@@ -205,13 +205,13 @@ impl Env {
     }
 
     pub fn init() -> Self {
-        Self::init_with_contract(&BURROWLAND_WASM_BYTES)
+        Self::init_with_contract(&NEARLEND_WASM_BYTES)
     }
 
     pub fn deploy_contract_by_key(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.contract
             .user_account
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .deploy_contract(contract_bytes.to_vec())
             .function_call(
                 "migrate_state".to_string(),
@@ -224,7 +224,7 @@ impl Env {
 
     pub fn deploy_contract_by_owner(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.owner
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .function_call("upgrade".to_string(), contract_bytes.to_vec(), MAX_GAS.0, 0)
             .submit()
     }
@@ -460,19 +460,7 @@ impl Env {
         token: &UserAccount,
         amount: Balance,
     ) -> ExecutionResult {
-        self.contract_ft_transfer_call(
-            &token,
-            &user,
-            amount,
-            &serde_json::to_string(&TokenReceiverMsg::Execute {
-                actions: vec![Action::IncreaseCollateral(AssetAmount {
-                    token_id: token.account_id(),
-                    amount: None,
-                    max_amount: None,
-                })],
-            })
-            .unwrap(),
-        )
+        self.contract_ft_transfer_call(&token, &user, amount, "")
     }
 
     pub fn oracle_call(
@@ -762,7 +750,7 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
 }
 
 pub fn basic_setup() -> (Env, Tokens, Users) {
-    basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
+    basic_setup_with_contract(&NEARLEND_WASM_BYTES)
 }
 
 pub fn sec_to_nano(sec: u32) -> u64 {

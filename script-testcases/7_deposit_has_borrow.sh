@@ -112,5 +112,5 @@ near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}
 
 
 
-# near view contract.main.burrow.near get_account '{"account_id": "oskarlee.near"}'
+# near view contract.nearlend.near get_account '{"account_id": "oskarlee.near"}'
 

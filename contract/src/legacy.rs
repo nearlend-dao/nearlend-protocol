@@ -1,6 +1,6 @@
 use crate::*;
 
-/// V0 legacy version of Account structure, before staking of the burrow token was introduced.
+/// V0 legacy version of Account structure, before staking of the nearlend token was introduced.
 #[derive(BorshSerialize, BorshDeserialize)]
 pub struct AccountV0 {
     /// A copy of an account ID. Saves one storage_read when iterating on accounts.
@@ -8,8 +8,6 @@ pub struct AccountV0 {
     /// A list of assets that are supplied by the account (but not used a collateral).
     /// It's not returned for account pagination.
     pub supplied: UnorderedMap<TokenId, VAccountAsset>,
-    /// A list of collateral assets.
-    pub collateral: Vec<CollateralAsset>,
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
 
@@ -24,7 +22,6 @@ impl From<AccountV0> for Account {
         let AccountV0 {
             account_id,
             supplied,
-            collateral,
             borrowed,
             nft_supplied,
             farms,
@@ -32,7 +29,6 @@ impl From<AccountV0> for Account {
         Self {
             account_id,
             supplied,
-            collateral,
             borrowed,
             nft_supplied,
             farms,

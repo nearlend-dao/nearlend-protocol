@@ -34,12 +34,10 @@ pub struct AssetView {
 #[serde(crate = "near_sdk::serde")]
 pub struct AccountDetailedView {
     pub account_id: AccountId,
-    /// A list of assets that are supplied by the account (but not used a collateral).
+    /// A list of assets that are supplied by the account used as collateral.
     pub supplied: Vec<AssetView>,
     /// A list of nft assets that are supplied by the account used a collateral.
     pub nft_supplied: Vec<NFTContractTokenId>,
-    /// A list of assets that are used as a collateral.
-    pub collateral: Vec<AssetView>,
     /// A list of assets that are borrowed.
     pub borrowed: Vec<AssetView>,
     /// Account farms
@@ -129,13 +127,6 @@ impl Contract {
                 })
                 .collect(),
             nft_supplied: account.nft_supplied.iter().map(|x| x).collect(),
-            collateral: account
-                .collateral
-                .into_iter()
-                .map(|CollateralAsset { token_id, shares }| {
-                    self.get_asset_view(token_id, shares, false)
-                })
-                .collect(),
             borrowed: account
                 .borrowed
                 .into_iter()

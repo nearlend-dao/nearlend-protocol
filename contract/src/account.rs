@@ -5,12 +5,11 @@ use crate::*;
 pub struct Account {
     /// A copy of an account ID. Saves one storage_read when iterating on accounts.
     pub account_id: AccountId,
-    /// A list of assets that are supplied by the account (but not used a collateral).
+    /// A list of assets that are supplied by the account used as collateral.
     /// It's not returned for account pagination.
     #[serde(skip_serializing)]
     pub supplied: UnorderedMap<TokenId, VAccountAsset>,
-    /// A list of collateral assets.
-    pub collateral: Vec<CollateralAsset>,
+
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
 
@@ -65,7 +64,6 @@ impl Account {
             nft_supplied: UnorderedSet::new(StorageKey::AccountNftAssets {
                 account_id: account_id.clone(),
             }),
-            collateral: vec![],
             borrowed: vec![],
             farms: UnorderedMap::new(StorageKey::AccountFarms {
                 account_id: account_id.clone(),
@@ -73,34 +71,6 @@ impl Account {
             affected_farms: vec![],
             storage_tracker: Default::default(),
             booster_staking: None,
-        }
-    }
-
-    pub fn increase_collateral(&mut self, token_id: &TokenId, shares: Shares) {
-        if let Some(collateral) = self.collateral.iter_mut().find(|c| &c.token_id == token_id) {
-            collateral.shares.0 += shares.0;
-        } else {
-            self.collateral.push(CollateralAsset {
-                token_id: token_id.clone(),
-                shares,
-            })
-        }
-    }
-
-    pub fn decrease_collateral(&mut self, token_id: &TokenId, shares: Shares) {
-        let index = self
-            .collateral
-            .iter()
-            .position(|c| &c.token_id == token_id)
-            .expect("Collateral not found");
-        if let Some(new_balance) = self.collateral[index].shares.0.checked_sub(shares.0) {
-            if new_balance > 0 {
-                self.collateral[index].shares.0 = new_balance;
-            } else {
-                self.collateral.swap_remove(index);
-            }
-        } else {
-            env::panic_str("Not enough collateral balance");
         }
     }
 
@@ -121,6 +91,7 @@ impl Account {
             .iter()
             .position(|c| &c.token_id == token_id)
             .expect("Borrowed asset not found");
+
         if let Some(new_balance) = self.borrowed[index].shares.0.checked_sub(shares.0) {
             if new_balance > 0 {
                 self.borrowed[index].shares.0 = new_balance;
@@ -130,14 +101,6 @@ impl Account {
         } else {
             env::panic_str("Not enough borrowed balance");
         }
-    }
-
-    pub fn internal_unwrap_collateral(&mut self, token_id: &TokenId) -> Shares {
-        self.collateral
-            .iter()
-            .find(|c| &c.token_id == token_id)
-            .expect("Collateral not found")
-            .shares
     }
 
     pub fn internal_unwrap_borrowed(&mut self, token_id: &TokenId) -> Shares {
@@ -160,12 +123,7 @@ impl Account {
         for token_id in self.supplied.keys() {
             potential_farms.push(FarmId::Supplied(token_id));
         }
-        for CollateralAsset { token_id, .. } in self.collateral.iter() {
-            let farm_id = FarmId::Supplied(token_id.clone());
-            if !potential_farms.contains(&farm_id) {
-                potential_farms.push(farm_id);
-            }
-        }
+
         for BorrowedAsset { token_id, .. } in &self.borrowed {
             potential_farms.push(FarmId::Borrowed(token_id.clone()));
         }
@@ -173,17 +131,11 @@ impl Account {
     }
 
     pub fn get_supplied_shares(&self, token_id: &TokenId) -> Shares {
-        let collateral_shares = self
-            .collateral
-            .iter()
-            .find(|c| &c.token_id == token_id)
-            .map(|ca| ca.shares.0)
-            .unwrap_or(0);
         let supplied_shares = self
             .internal_get_asset(token_id)
             .map(|asset| asset.shares.0)
             .unwrap_or(0);
-        (supplied_shares + collateral_shares).into()
+        supplied_shares.into()
     }
 
     pub fn get_borrowed_shares(&self, token_id: &TokenId) -> Shares {

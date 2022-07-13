@@ -31,10 +31,10 @@ fn test_liquidation_alice_by_bob() {
     .assert_success();
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.collateral[0].balance, supply_amount);
+    assert_eq!(account.supplied.len(), 1);
+    assert_eq!(account.supplied[0].token_id, tokens.nusdc.account_id());
+    assert_eq!(account.supplied[0].balance, supply_amount);
+
     assert_eq!(account.borrowed.len(), 1);
     assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
     assert_eq!(account.borrowed[0].balance, borrow_amount);
@@ -64,13 +64,10 @@ fn test_liquidation_alice_by_bob() {
     // println!("{:#?}", res.logs());
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(
-        account.collateral[0].balance,
-        supply_amount - usdc_amount_out
-    );
+    assert_eq!(account.supplied.len(), 1);
+    assert_eq!(account.supplied[0].token_id, tokens.nusdc.account_id());
+    assert_eq!(account.supplied[0].balance, supply_amount - usdc_amount_out);
+
     assert_eq!(account.borrowed.len(), 1);
     assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
     assert_eq!(account.borrowed[0].balance, borrow_amount - wnear_amount_in);
@@ -120,10 +117,10 @@ fn test_liquidation_decrease_health_factor() {
     .assert_success();
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.collateral[0].balance, supply_amount);
+    assert_eq!(account.supplied.len(), 1);
+    assert_eq!(account.supplied[0].token_id, tokens.nusdc.account_id());
+    assert_eq!(account.supplied[0].balance, supply_amount);
+
     assert_eq!(account.borrowed.len(), 2);
     assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
     assert_eq!(account.borrowed[0].balance, wnear_borrow_amount);
@@ -192,7 +189,7 @@ fn test_liquidation_decrease_health_factor() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "liquidate");
     assert_eq!(
         value["data"][0]["account_id"].as_str().unwrap(),
@@ -209,13 +206,10 @@ fn test_liquidation_decrease_health_factor() {
     assert_eq!(value["data"][0]["repaid_sum"].as_str().unwrap(), "108.8");
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(
-        account.collateral[0].balance,
-        supply_amount - usdc_amount_out
-    );
+    assert_eq!(account.supplied.len(), 1);
+    assert_eq!(account.supplied[0].token_id, tokens.nusdc.account_id());
+    assert_eq!(account.supplied[0].balance, supply_amount - usdc_amount_out);
+
     assert_eq!(account.borrowed.len(), 1);
     assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
     assert_eq!(
@@ -299,7 +293,7 @@ fn test_force_close() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "force_close");
     assert_eq!(
         value["data"][0]["liquidation_account_id"].as_str().unwrap(),
@@ -313,7 +307,6 @@ fn test_force_close() {
 
     let account = e.get_account(&users.alice);
     assert!(account.supplied.is_empty());
-    assert!(account.collateral.is_empty());
     assert!(account.borrowed.is_empty());
 
     let asset = e.get_asset(&tokens.nusdc);

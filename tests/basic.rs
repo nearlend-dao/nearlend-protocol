@@ -52,23 +52,6 @@ fn test_supply() {
 }
 
 #[test]
-fn test_supply_to_collateral() {
-    let (e, tokens, users) = basic_setup();
-
-    let amount = d(100, 24);
-    e.supply_to_collateral(&users.alice, &tokens.wnear, amount)
-        .assert_success();
-
-    let asset = e.get_asset(&tokens.wnear);
-    assert_eq!(asset.supplied.balance, amount);
-
-    let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral[0].balance, amount);
-    assert_eq!(account.collateral[0].token_id, tokens.wnear.account_id());
-}
-
-#[test]
 fn test_borrow() {
     let (e, tokens, users) = basic_setup();
 
@@ -92,9 +75,9 @@ fn test_borrow() {
     assert!(asset.supply_apr > BigDecimal::zero());
 
     let account = e.get_account(&users.alice);
-    assert_eq!(account.supplied[0].balance, borrow_amount);
-    assert_eq!(account.supplied[0].token_id, tokens.ndai.account_id());
-    assert!(account.supplied[0].apr > BigDecimal::zero());
+    assert_eq!(account.supplied[1].balance, borrow_amount);
+    assert_eq!(account.supplied[1].token_id, tokens.ndai.account_id());
+    assert!(account.supplied[1].apr > BigDecimal::zero());
     assert_eq!(account.borrowed[0].balance, borrow_amount);
     assert_eq!(account.borrowed[0].token_id, tokens.ndai.account_id());
     assert!(account.borrowed[0].apr > BigDecimal::zero());
@@ -124,7 +107,6 @@ fn test_borrow_and_withdraw() {
     assert_eq!(asset.supply_apr, BigDecimal::zero());
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
     assert_eq!(account.borrowed[0].balance, borrow_amount);
     assert_eq!(account.borrowed[0].token_id, tokens.ndai.account_id());
     assert!(account.borrowed[0].apr > BigDecimal::zero());
