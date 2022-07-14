@@ -82,13 +82,6 @@ impl Contract {
         nft_contract_id: &NFTContractId,
         token_id: &NFTTokenId,
     ) -> Promise {
-        log!(
-            "======> nft_transfer: nft_contract_id: {:?}, token_id: {:?}, receiver_id {:?}",
-            nft_contract_id.clone(),
-            token_id.clone(),
-            account_id.clone()
-        );
-
         ext_nft_contract::nft_transfer(
             account_id.clone(),
             token_id.clone(),

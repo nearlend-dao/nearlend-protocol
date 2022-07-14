@@ -189,12 +189,47 @@ impl Contract {
     /// Returns limited account information for accounts from a given index up to a given limit.
     /// The information includes number of shares for collateral and borrowed assets.
     /// This method can be used to iterate on the accounts for liquidation.
-    pub fn get_accounts_paged(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<Account> {
+    pub fn get_accounts_paged_old(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<Account> {
         let values = self.accounts.values_as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(values.len());
         (from_index..std::cmp::min(values.len(), limit))
             .map(|index| values.get(index).unwrap().into())
+            .collect()
+    }
+
+    /// Returns limited account information for accounts from a given index up to a given limit.
+    /// The information includes number of shares for collateral and borrowed assets.
+    /// This method can be used to iterate on the accounts for liquidation.
+    pub fn get_accounts_paged(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<AccountSimpleView> {
+        unordered_map_pagination(&self.accounts, from_index, limit)
+            .into_iter()
+            .map(
+                |(
+                    _,
+                    Account {
+                        account_id,
+                        supplied: _supplied,
+                        borrowed: _borrowed,
+                        nft_supplied: _nft_supplied,
+                        farms: _farms,
+                        affected_farms: _affected_farms,
+                        storage_tracker: _storage_tracker,
+                        booster_staking: _booster_staking,
+                    },
+                )| {
+                    let account: Account = self.accounts.get(&account_id).unwrap().into();
+                    self.account_into_simple_view(account)
+                },
+            )
             .collect()
     }
 

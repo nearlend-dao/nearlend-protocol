@@ -61,6 +61,20 @@ pub struct AccountFarmRewardView {
     pub unclaimed_amount: Balance,
 }
 
+#[derive(Serialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[serde(crate = "near_sdk::serde")]
+pub struct AccountSimpleView {
+    /// A copy of an account ID. Saves one storage_read when iterating on accounts.
+    pub account_id: AccountId,
+    /// A list of assets that are supplied by the account used as collateral.
+    pub collateral: Vec<AssetView>,
+    /// A list of nft assets that are supplied by the account used a collateral.
+    pub nft: Vec<AssetNFTView>,
+    /// A list of borrowed assets.
+    pub borrowed: Vec<AssetView>,
+}
+
 impl Contract {
     pub fn account_into_detailed_view(&self, account: Account) -> AccountDetailedView {
         let mut potential_farms = account.get_all_potential_farms();
@@ -148,6 +162,44 @@ impl Contract {
             farms,
             has_non_farmed_assets,
             booster_staking: account.booster_staking,
+        }
+    }
+
+    pub fn account_into_simple_view(&self, account: Account) -> AccountSimpleView {
+        AccountSimpleView {
+            account_id: account.account_id,
+            collateral: unordered_map_pagination(&account.supplied, None, None)
+                .into_iter()
+                .map(|(token_id, AccountAsset { shares })| {
+                    self.get_asset_view(token_id, shares, false)
+                })
+                .collect(),
+            nft: unordered_map_pagination(&account.nft_supplied, None, None)
+                .into_iter()
+                .map(
+                    |(
+                        _,
+                        AccountNFTAsset {
+                            nft_contract_id,
+                            nft_token_id,
+                            deposit_timestamp,
+                        },
+                    )| {
+                        AssetNFTView {
+                            nft_contract_id,
+                            nft_token_id,
+                            deposit_timestamp,
+                        }
+                    },
+                )
+                .collect(),
+            borrowed: account
+                .borrowed
+                .into_iter()
+                .map(|BorrowedAsset { token_id, shares }| {
+                    self.get_asset_view(token_id, shares, true)
+                })
+                .collect(),
         }
     }
 

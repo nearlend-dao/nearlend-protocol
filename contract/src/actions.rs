@@ -527,12 +527,6 @@ impl Contract {
                 |sum, (token_id, AccountAsset { shares })| {
                     let asset = self.internal_unwrap_asset(&token_id);
                     let balance = asset.supplied.shares_to_amount(shares, false);
-                    log!(
-                        "====> compute_max_discount: collateral_sum222: {:?}, {:?}",
-                        token_id,
-                        balance
-                    );
-
                     sum + BigDecimal::from_balance_price(
                         balance,
                         prices.get_unwrap(&token_id),

@@ -23,7 +23,7 @@ trait Contract {
     /// Returns limited account information for accounts from a given index up to a given limit.
     /// The information includes number of shares for collateral and borrowed assets.
     /// This method can be used to iterate on the accounts for liquidation.
-    fn get_accounts_paged(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<Account>;
+    fn get_accounts_paged(&self, from_index: Option<u64>, limit: Option<u64>) -> Vec<AccountSimpleView>;
 
     /// Executes a given list actions on behalf of the predecessor account.
     /// - Requires one yoctoNEAR.
@@ -176,6 +176,17 @@ pub struct AccountDetailedView {
     pub borrowed: Vec<AssetView>,
     /// Account farms
     pub farms: Vec<AccountFarmView>,
+}
+
+pub struct AccountSimpleView {
+    /// A copy of an account ID. Saves one storage_read when iterating on accounts.
+    pub account_id: AccountId,
+    /// A list of assets that are supplied by the account used as collateral.
+    pub collateral: Vec<AssetView>,
+    /// A list of nft assets that are supplied by the account used a collateral.
+    pub nft: Vec<AssetNFTView>,
+    /// A list of borrowed assets.
+    pub borrowed: Vec<AssetView>,
 }
 
 /// Limited view of the account structure for liquidations
