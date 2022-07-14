@@ -46,16 +46,13 @@ near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
 ###################### B3: Thực hiện WithDraw vs 5 DAI #####################
 
-near call $CONTRACT_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO execute '{
-  "actions": [
-    {
-      "Withdraw": {
-        "token_id": "'$DAI_TOKEN_ID'",
-        "amount": "5'$DECIMAL_18'"
-      }
-    }
-  ]
-}'
+near call $ORACLE_ID --accountId=$ACCOUNT_ID oracle_call '{  "receiver_id": "'$CONTRACT_ID'",
+  "asset_ids": [
+    "'$USDT_TOKEN_ID'",
+    "'$DAI_TOKEN_ID'"
+  ],
+  "msg": "{\"Execute\": {\"actions\": [{\"Withdraw\":{\"token_id\":\"'$DAI_TOKEN_ID'\", \"amount\":\"5'$DECIMAL_18'\"}}]}}"
+}' --amount=$ONE_YOCTO --gas=$GAS
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'

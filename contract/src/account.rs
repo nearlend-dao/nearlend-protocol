@@ -149,13 +149,6 @@ impl Account {
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
-pub struct CollateralAsset {
-    pub token_id: TokenId,
-    pub shares: Shares,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
 pub struct BorrowedAsset {
     pub token_id: TokenId,
     pub shares: Shares,

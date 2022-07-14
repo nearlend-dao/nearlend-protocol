@@ -48,7 +48,7 @@ near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 near call $DAI_TOKEN_ID --accountId=$OWNER_ID ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "amount": "10'$DECIMAL_18'",
-  "msg": "{\"Execute\": {\"actions\": [{\"IncreaseCollateral\": {\"token_id\": \"'$DAI_TOKEN_ID'\", \"amount\": \"10'$DECIMAL_18'\"}}]}}"
+  "msg": ""
 }' --amount=$ONE_YOCTO --gas=$GAS
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 

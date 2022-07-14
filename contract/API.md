@@ -1,6 +1,7 @@
 # The list of APIs that are provided by the contract
 
 Notes:
+
 - `u128_dec_format`, `WrappedBalance`, `Shares` means the value is passed as a decimal string representation. E.g. `1` serialized as `"1"`
 - `BigDecimal` is serialized as floating string representation. E.g. `1.5` serialized as `"1.5"`
 - `u64` means the value is passed as an integer.
@@ -135,7 +136,7 @@ trait Contract {
 
 ## Structures and types
 
-```rust
+````rust
 pub struct AssetView {
     pub token_id: TokenId,
     #[serde(with = "u128_dec_format")]
@@ -167,10 +168,10 @@ pub struct AccountFarmRewardView {
 
 pub struct AccountDetailedView {
     pub account_id: AccountId,
-    /// A list of assets that are supplied by the account (but not used a collateral).
+    /// A list of assets that are supplied by the account used as collateral.
     pub supplied: Vec<AssetView>,
-    /// A list of assets that are used as a collateral.
-    pub collateral: Vec<AssetView>,
+    /// A list of NFT assets that are used as a collateral.
+    pub nft_supplied: Vec<AssetNFTView>,
     /// A list of assets that are borrowed.
     pub borrowed: Vec<AssetView>,
     /// Account farms
@@ -181,15 +182,8 @@ pub struct AccountDetailedView {
 pub struct Account {
     /// A copy of an account ID. Saves one storage_read when iterating on accounts.
     pub account_id: AccountId,
-    /// A list of collateral assets.
-    pub collateral: Vec<CollateralAsset>,
     /// A list of borrowed assets.
     pub borrowed: Vec<BorrowedAsset>,
-}
-
-pub struct CollateralAsset {
-    pub token_id: TokenId,
-    pub shares: Shares,
 }
 
 pub struct BorrowedAsset {
@@ -199,8 +193,10 @@ pub struct BorrowedAsset {
 
 pub struct AssetDetailedView {
     pub token_id: TokenId,
-    /// Total supplied including collateral, but excluding reserved.
+    /// Total supplied, but excluding reserved.
     pub supplied: Pool,
+     /// Total NFT supplied.
+    pub nft_supplied: Pool,
     /// Total borrowed.
     pub borrowed: Pool,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
@@ -252,8 +248,10 @@ pub struct AssetFarmReward {
 }
 
 pub struct Asset {
-    /// Total supplied including collateral, but excluding reserved.
+    /// Total supplied, but excluding reserved.
     pub supplied: Pool,
+     /// Total nft supplied.
+    pub nft_supplied: Vec<NftPool>,
     /// Total borrowed.
     pub borrowed: Pool,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
@@ -271,6 +269,13 @@ pub struct Pool {
     pub shares: Shares,
     #[serde(with = "u128_dec_format")]
     pub balance: Balance,
+}
+
+pub struct NftPool {
+    pub owner_id: AccountId,
+    pub token_id: NFTTokenId,
+    #[serde(with = "u64_dec_format")]
+    pub deposit_timestamp: Timestamp,
 }
 
 /// Represents an asset config.
@@ -339,6 +344,11 @@ pub struct AssetAmount {
     pub max_amount: Option<WrappedBalance>,
 }
 
+pub struct NFTAsset {
+    pub nft_contract_id: NFTContractId,
+    pub token_id: NFTTokenId,
+}
+
 /// Contract config
 pub struct Config {
     /// The account ID of the oracle contract
@@ -356,8 +366,7 @@ pub struct Config {
 
 pub enum Action {
     Withdraw(AssetAmount),
-    IncreaseCollateral(AssetAmount),
-    DecreaseCollateral(AssetAmount),
+    WithdrawNFT(NFTAsset),
     Borrow(AssetAmount),
     Repay(AssetAmount),
     Liquidate {
@@ -365,11 +374,14 @@ pub enum Action {
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
     },
+    ForceClose {
+        account_id: AccountId,
+    }
 }
 
 pub enum TokenReceiverMsg {
     Execute { actions: Vec<Action> },
-    /// The entire amount will be deposited to the asset reserve. 
+    /// The entire amount will be deposited to the asset reserve.
     DepositToReserve,
 }
 
@@ -378,7 +390,10 @@ enum PriceReceiverMsg {
 }
 
 pub type TokenId = AccountId;
-```
+pub type NFTContractId = AccountId;
+pub type NFTTokenId = String;
+pub type NFTContractTokenId = String;
+````
 
 ## Also storage management
 
