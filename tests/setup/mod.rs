@@ -605,7 +605,7 @@ impl Env {
 
     pub fn account_farm_claim_all(&self, user: &UserAccount) -> ExecutionResult {
         user.function_call(
-            self.contract.contract.account_farm_claim_all(),
+            self.contract.contract.account_farm_claim_all(None),
             MAX_GAS.0,
             0,
         )

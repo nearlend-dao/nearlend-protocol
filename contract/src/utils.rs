@@ -5,6 +5,7 @@ pub(crate) type NFTContractId = AccountId;
 pub(crate) type NFTTokenId = String;
 pub(crate) type NFTContractTokenId = String;
 
+#[allow(unused)]
 pub(crate) fn unordered_map_pagination<K, VV, V>(
     m: &UnorderedMap<K, VV>,
     from_index: Option<u64>,

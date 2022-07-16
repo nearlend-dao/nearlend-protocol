@@ -1,6 +1,7 @@
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Clone, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct AccountNFTAsset {
     pub nft_contract_id: NFTContractId,
     pub nft_token_id: NFTTokenId,
@@ -35,7 +36,7 @@ impl Account {
     ) -> Option<AccountNFTAsset> {
         self.nft_supplied
             .get(nft_contract_token_id)
-            .map(|o| o.into())
+            .map(|x| x.clone())
     }
 
     pub fn internal_get_nft_asset_or_default(
@@ -51,14 +52,11 @@ impl Account {
         nft_contract_token_id: &NFTContractTokenId,
         account_nft_asset: AccountNFTAsset,
     ) {
-        self.storage_tracker.start();
         if account_nft_asset.is_empty() {
             self.nft_supplied.remove(nft_contract_token_id);
         } else {
             self.nft_supplied
-                .insert(nft_contract_token_id, &account_nft_asset.into());
+                .insert(nft_contract_token_id.clone(), account_nft_asset.into());
         }
-        self.storage_tracker.stop();
-        // self.add_affected_farm(FarmId::Supplied(nft_contract_token_id.clone()));
     }
 }
