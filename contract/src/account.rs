@@ -9,27 +9,20 @@ pub struct Account {
     pub account_id: AccountId,
     /// A list of assets that are supplied by the account used as collateral.
     /// It's not returned for account pagination.
-    // #[serde(skip_serializing)]
-    // pub supplied: UnorderedMap<TokenId, VAccountAsset>,
     pub supplied: HashMap<TokenId, Shares>,
 
     /// A list of borrowed assets.
-    // pub borrowed: Vec<BorrowedAsset>,
     pub borrowed: HashMap<TokenId, Shares>,
 
     // A list of NFT assets that are supplied by the account used as a collateral.
-    // #[serde(skip_serializing)]
-    // pub nft_supplied: UnorderedMap<NFTContractTokenId, AccountNFTAsset>,
     pub nft_supplied: HashMap<NFTContractTokenId, AccountNFTAsset>,
 
     /// Keeping track of data required for farms for this account.
     #[serde(skip_serializing)]
-    // pub farms: UnorderedMap<FarmId, VAccountFarm>,
     pub farms: HashMap<FarmId, AccountFarm>,
 
     #[borsh_skip]
     #[serde(skip_serializing)]
-    // pub affected_farms: Vec<FarmId>,
     pub affected_farms: HashSet<FarmId>,
 
     /// Tracks changes in storage usage by persistent collections in this account.
