@@ -211,7 +211,7 @@ impl Contract {
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
         let mut farm_ids = vec![];
-        for index in from_index..std::cmp::min(keys.len(), limit) {
+        for index in from_index..std::cmp::min(keys.len(), from_index + limit) {
             let token_id = keys.get(index).unwrap();
             farm_ids.push(FarmId::Supplied(token_id.clone()));
             farm_ids.push(FarmId::Borrowed(token_id));
