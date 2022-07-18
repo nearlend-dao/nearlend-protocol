@@ -93,8 +93,8 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
   "asset_config": {
     "reserve_ratio": 1000,
     "target_utilization": 8000,
-    "target_utilization_rate": "1000000001243680656318820313",
-    "max_utilization_rate": "1000000017745300383710610089",
+    "target_utilization_rate": "1000000000001243680655546223",
+    "max_utilization_rate": "1000000000017745300226420217",
     "volatility_ratio": 9500,
     "extra_decimals": 0,
     "can_deposit": true,

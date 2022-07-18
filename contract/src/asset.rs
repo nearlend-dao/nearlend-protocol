@@ -256,7 +256,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let key = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&key).unwrap().into();
@@ -274,7 +274,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let token_id = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
