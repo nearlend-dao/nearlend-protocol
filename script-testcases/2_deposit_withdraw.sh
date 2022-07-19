@@ -34,7 +34,7 @@ export DECIMAL_18=000000000000000000
 
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
-  "amount": "10'$DECIMAL_18'",
+  "amount": "1000'$DECIMAL_18'",
   "msg": ""
 }' --amount=$ONE_YOCTO --gas=$GAS
 

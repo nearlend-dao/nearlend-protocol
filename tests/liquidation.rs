@@ -192,7 +192,7 @@ fn test_liquidation_decrease_health_factor() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "liquidate");
     assert_eq!(
         value["data"][0]["account_id"].as_str().unwrap(),
@@ -299,7 +299,7 @@ fn test_force_close() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "force_close");
     assert_eq!(
         value["data"][0]["liquidation_account_id"].as_str().unwrap(),

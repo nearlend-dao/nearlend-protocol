@@ -5,7 +5,8 @@ from decimal import *
 
 getcontext().prec = 60
 
-n = 31536000000
+n = 31536000        # 1 years = 31536000 seconds
+#n = 31536000000
 input_apr = Decimal(sys.argv[1])
 print("Input APR: %s%%" % (input_apr,))
 print("n: %d" % (n,))

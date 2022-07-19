@@ -59,24 +59,34 @@ near call $CONTRACT_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO ex
 }'
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 
+near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_TEST'"}'
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 ###################### End B3: Thực hiện IncreaseCollateral vs 5 DAI #####################
 
 
-###################### B4: Thực hiện Borrow 1 DAI #####################
-near call $ORACLE_ID --accountId=$OWNER_ID oracle_call '{
+###################### B4: Thực hiện Borrow 5 DAI #####################
+near call $ORACLE_ID --accountId=$ACCOUNT_TEST oracle_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "asset_ids": [
     "'$USDT_TOKEN_ID'",
     "'$DAI_TOKEN_ID'"
   ],
-  "msg": "{\"Execute\": {\"actions\": [{\"Borrow\": {\"token_id\": \"'$DAI_TOKEN_ID'\", \"amount\": \"9'$DECIMAL_18'\"}}]}}"
+  "msg": "{\"Execute\": {\"actions\": [{\"Borrow\": {\"token_id\": \"'$DAI_TOKEN_ID'\", \"amount\": \"5'$DECIMAL_18'\"}}]}}"
+}' --amount=$ONE_YOCTO --gas=$GAS
+
+near call $ORACLE_ID --accountId=$ACCOUNT_ID oracle_call '{
+  "receiver_id": "'$CONTRACT_ID'",
+  "asset_ids": [
+    "'$USDT_TOKEN_ID'",
+    "'$DAI_TOKEN_ID'"
+  ],
+  "msg": "{\"Execute\": {\"actions\": [{\"Borrow\": {\"token_id\": \"'$USDT_TOKEN_ID'\", \"amount\": \"5'$DECIMAL_18'\"}}]}}"
 }' --amount=$ONE_YOCTO --gas=$GAS
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}'
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
-###################### End B4: Thực hiện Borrow 1 DAI #####################
+###################### End B4: Thực hiện Borrow 5 DAI #####################
 
 
 # near view nearlend.lam-test6.testnet get_account '{"account_id": "lam-test6.testnet"}' 

@@ -23,7 +23,7 @@ pub mod emit {
 
     fn log_event<T: Serialize>(event: &str, data: T) {
         let event = json!({
-            "standard": "burrow",
+            "standard": "near-lend",
             "version": "1.0.0",
             "event": event,
             "data": [data]

@@ -200,7 +200,6 @@ impl BigDecimal {
         ((self.0 + U384::from(HALF_DIVISOR)) / U384::from(BIG_DIVISOR)).as_u128()
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn f64(&self) -> f64 {
         let base = (self.0 / U384::from(BIG_DIVISOR)).as_u128();
         let fract = (self.0 - U384::from(base)).as_u128() as f64;

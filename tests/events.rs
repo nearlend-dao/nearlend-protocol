@@ -17,7 +17,7 @@ fn test_deposit_event() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "deposit");
     assert_eq!(
         value["data"][0]["account_id"].as_str().unwrap(),

@@ -28,6 +28,10 @@ pub(crate) fn nano_to_ms(nano: u64) -> u64 {
     nano / 10u64.pow(6)
 }
 
+pub(crate) fn nano_to_second(nano: u64) -> u64 {
+    nano / 10u64.pow(9)
+}
+
 pub(crate) fn ms_to_nano(ms: u64) -> u64 {
     ms * 10u64.pow(6)
 }

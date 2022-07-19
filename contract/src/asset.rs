@@ -1,6 +1,7 @@
 use crate::*;
 
 pub const MS_PER_YEAR: u64 = 31536000000;
+pub const SEC_PER_YEAR: u64 = (MS_PER_YEAR / 1000) as u64;
 pub const MAX_ITEMS: usize = 99999;
 
 static ASSETS: Lazy<Mutex<HashMap<TokenId, Option<Asset>>>> =
@@ -64,7 +65,7 @@ impl Asset {
 
     pub fn get_borrow_apr(&self) -> BigDecimal {
         let rate = self.get_rate();
-        rate.pow(MS_PER_YEAR) - BigDecimal::one()
+        rate.pow(SEC_PER_YEAR) - BigDecimal::one()
     }
 
     pub fn get_supply_apr(&self) -> BigDecimal {
@@ -110,7 +111,7 @@ impl Asset {
 
     pub fn update(&mut self) {
         let timestamp = env::block_timestamp();
-        let time_diff_ms = nano_to_ms(timestamp - self.last_update_timestamp);
+        let time_diff_ms = nano_to_second(timestamp - self.last_update_timestamp);
         if time_diff_ms > 0 {
             // update
             self.last_update_timestamp += ms_to_nano(time_diff_ms);
@@ -280,6 +281,24 @@ impl Contract {
                 let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
                 asset.update();
                 self.asset_into_detailed_view(token_id, asset)
+            })
+            .collect()
+    }
+
+    pub fn get_assets_apr(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<AssetAprViewJSon> {
+        let keys = self.asset_ids.as_vector();
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(keys.len());
+        (from_index..std::cmp::min(keys.len(), limit))
+            .map(|index| {
+                let token_id = keys.get(index).unwrap();
+                let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
+                asset.update();
+                self.asset_into_apr_view(token_id, asset)
             })
             .collect()
     }
