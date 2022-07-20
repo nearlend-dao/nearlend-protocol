@@ -33,7 +33,7 @@ impl From<AssetAprView> for AssetAprViewJSon {
 }
 
 impl Contract {
-    pub fn asset_into_apr_view(&self, token_id: TokenId, asset: Asset) -> AssetAprViewJSon {
+    pub fn asset_into_apy_view(&self, token_id: TokenId, asset: Asset) -> AssetAprViewJSon {
         let supply_apr = asset.get_supply_apr();
         let borrow_apr = asset.get_borrow_apr();
         let asset_apr_view = AssetAprView {

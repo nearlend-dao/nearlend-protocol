@@ -285,7 +285,7 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_assets_apr(
+    pub fn get_assets_apy(
         &self,
         from_index: Option<u64>,
         limit: Option<u64>,
@@ -298,7 +298,7 @@ impl Contract {
                 let token_id = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
                 asset.update();
-                self.asset_into_apr_view(token_id, asset)
+                self.asset_into_apy_view(token_id, asset)
             })
             .collect()
     }

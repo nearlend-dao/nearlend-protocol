@@ -402,5 +402,5 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
 
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
-near view $CONTRACT_ID get_assets_apr '{"from_index": 0, "limit": 10}'
+near view $CONTRACT_ID get_assets_apy '{"from_index": 0, "limit": 10}'
 ###################### End B5: Add asset #####################
