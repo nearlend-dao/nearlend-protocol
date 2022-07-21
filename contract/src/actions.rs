@@ -35,6 +35,7 @@ pub enum Action {
         account_id: AccountId,
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
     },
     /// If the sum of borrowed assets exceeds the collateral, the account will be liquidated
     /// using reserves.
@@ -96,12 +97,14 @@ impl Contract {
                     account_id: liquidation_account_id,
                     in_assets,
                     out_assets,
+                    out_nft_assets,
                 } => {
                     assert_ne!(
                         account_id, &liquidation_account_id,
                         "Can't liquidate yourself"
                     );
-                    assert!(!in_assets.is_empty() && !out_assets.is_empty());
+                    assert!(!in_assets.is_empty());
+                    assert!(!out_assets.is_empty() || !out_nft_assets.is_empty());
                     self.internal_liquidate(
                         account_id,
                         account,
@@ -109,6 +112,7 @@ impl Contract {
                         &liquidation_account_id,
                         in_assets,
                         out_assets,
+                        out_nft_assets,
                     );
                 }
                 Action::ForceClose {
@@ -364,6 +368,7 @@ impl Contract {
         liquidation_account_id: &AccountId,
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
 
@@ -409,6 +414,57 @@ impl Contract {
                     amount,
                     prices.get_unwrap(&asset_amount.token_id),
                     asset.config.extra_decimals,
+                );
+        }
+
+        for nft_asset in out_nft_assets {
+            let asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
+            let config_extra_decimals = asset.config.extra_decimals.clone();
+
+            // Check NFT owner from liquidation account
+            if let Some(owner_id) = asset.get_owner_nft(&nft_asset.token_id, &asset) {
+                assert_eq!(
+                        liquidation_account_id.clone(),
+                        owner_id,
+                        "You are not authorized. You can only liquidate nft from the liquidation account {}",
+                        owner_id
+                    );
+            } else {
+                env::panic_str("NFT notfound");
+            }
+
+            // Get NFT from liquidation account
+            let contract_nft_token_id: NFTContractTokenId = format!(
+                "{}{}{}",
+                nft_asset.nft_contract_id, NFT_DELIMETER, nft_asset.token_id
+            );
+            let account_nft_asset =
+                liquidation_account.internal_get_nft_asset_or_default(&contract_nft_token_id);
+            let account_nft_asset_tranfer = account_nft_asset.clone();
+
+            // Remove NFT from liquidation account
+            liquidation_account
+                .nft_supplied
+                .remove(&contract_nft_token_id);
+
+            // Add NFT to liquidator account
+            account.internal_set_nft_asset(&contract_nft_token_id, account_nft_asset_tranfer);
+
+            // Transfer owner NFT to liquidator account
+            self.internal_set_nft_asset(
+                &nft_asset.nft_contract_id,
+                account_id.clone(),
+                nft_asset.token_id.clone(),
+                asset,
+            );
+
+            // Fix NFT balance is 1 (decimals 24)
+            let balance = 1 * 10u128.pow(24);
+            collateral_taken_sum = collateral_taken_sum
+                + BigDecimal::from_balance_price(
+                    balance,
+                    prices.get_unwrap(&nft_asset.nft_contract_id),
+                    config_extra_decimals,
                 );
         }
 

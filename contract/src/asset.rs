@@ -169,14 +169,18 @@ impl Contract {
             .iter()
             .position(|x| *x.token_id == token_id)
             .unwrap_or(MAX_ITEMS);
+
+        let mut deposit_timestamp = env::block_timestamp();
         if index != MAX_ITEMS {
+            let current_nft = asset.nft_supplied.get(index).expect("Can't find the nft");
+            deposit_timestamp = current_nft.deposit_timestamp;
             asset.nft_supplied.remove(index);
         }
 
         asset.nft_supplied.push(NftPool {
             owner_id,
-            token_id: token_id,
-            deposit_timestamp: env::block_timestamp(),
+            token_id,
+            deposit_timestamp,
         });
 
         ASSETS
