@@ -283,4 +283,22 @@ impl Contract {
             })
             .collect()
     }
+
+    pub fn get_assets_apr(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<AssetAprViewJSon> {
+        let keys = self.asset_ids.as_vector();
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(keys.len());
+        (from_index..std::cmp::min(keys.len(), limit))
+            .map(|index| {
+                let token_id = keys.get(index).unwrap();
+                let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
+                asset.update();
+                self.asset_into_apy_view(token_id, asset)
+            })
+            .collect()
+    }
 }
