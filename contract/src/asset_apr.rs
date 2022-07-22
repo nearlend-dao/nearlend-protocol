@@ -26,8 +26,8 @@ impl From<AssetAprView> for AssetAprViewJSon {
     fn from(v: AssetAprView) -> Self {
         AssetAprViewJSon {
             token_id: v.token_id.to_string(),
-            supply_apr: v.supply_apr.f64(),
-            borrow_apr: v.borrow_apr.f64(),
+            supply_apr: (v.supply_apr.f64() * 10000.0).round() / 100.0,
+            borrow_apr: (v.borrow_apr.f64() * 10000.0).round() / 100.0,
         }
     }
 }
