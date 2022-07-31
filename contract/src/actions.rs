@@ -35,6 +35,10 @@ pub enum Action {
         account_id: AccountId,
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
+    },
+    LiquidateNFT {
+        account_id: AccountId,
+        in_assets: Vec<AssetAmount>,
         out_nft_assets: Vec<NFTAsset>,
     },
     /// If the sum of borrowed assets exceeds the collateral, the account will be liquidated
@@ -97,14 +101,13 @@ impl Contract {
                     account_id: liquidation_account_id,
                     in_assets,
                     out_assets,
-                    out_nft_assets,
                 } => {
                     assert_ne!(
                         account_id, &liquidation_account_id,
                         "Can't liquidate yourself"
                     );
                     assert!(!in_assets.is_empty());
-                    assert!(!out_assets.is_empty() || !out_nft_assets.is_empty());
+                    assert!(!out_assets.is_empty());
                     self.internal_liquidate(
                         account_id,
                         account,
@@ -112,6 +115,26 @@ impl Contract {
                         &liquidation_account_id,
                         in_assets,
                         out_assets,
+                    );
+                }
+
+                Action::LiquidateNFT {
+                    account_id: liquidation_account_id,
+                    in_assets,
+                    out_nft_assets,
+                } => {
+                    assert_ne!(
+                        account_id, &liquidation_account_id,
+                        "Can't liquidate yourself"
+                    );
+                    assert!(!in_assets.is_empty());
+                    assert!(!out_nft_assets.is_empty());
+                    self.internal_liquidate_nft(
+                        account_id,
+                        account,
+                        &prices,
+                        &liquidation_account_id,
+                        in_assets,
                         out_nft_assets,
                     );
                 }
@@ -360,14 +383,13 @@ impl Contract {
         amount
     }
 
-    pub fn internal_liquidate(
+    pub fn internal_liquidate_nft(
         &mut self,
         account_id: &AccountId,
         account: &mut Account,
         prices: &Prices,
         liquidation_account_id: &AccountId,
         in_assets: Vec<AssetAmount>,
-        out_assets: Vec<AssetAmount>,
         out_nft_assets: Vec<NFTAsset>,
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
@@ -390,26 +412,6 @@ impl Contract {
             let asset = self.internal_unwrap_asset(&asset_amount.token_id);
 
             borrowed_repaid_sum = borrowed_repaid_sum
-                + BigDecimal::from_balance_price(
-                    amount,
-                    prices.get_unwrap(&asset_amount.token_id),
-                    asset.config.extra_decimals,
-                );
-        }
-
-        for asset_amount in out_assets {
-            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
-            liquidation_account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
-            let mut account_asset = account.internal_get_asset_or_default(&asset_amount.token_id);
-
-            let amount = self.internal_decrease_supplied(
-                &mut account_asset,
-                &mut liquidation_account,
-                &asset_amount,
-            );
-            account.internal_set_asset(&asset_amount.token_id, account_asset);
-
-            collateral_taken_sum = collateral_taken_sum
                 + BigDecimal::from_balance_price(
                     amount,
                     prices.get_unwrap(&asset_amount.token_id),
@@ -465,6 +467,92 @@ impl Contract {
                     balance,
                     prices.get_unwrap(&nft_asset.nft_contract_id),
                     config_extra_decimals,
+                );
+        }
+
+        let discounted_collateral_taken = collateral_taken_sum * (BigDecimal::one() - max_discount);
+        assert!(
+            discounted_collateral_taken <= borrowed_repaid_sum,
+            "Not enough balances repaid: discounted collateral {} > borrowed repaid sum {}",
+            discounted_collateral_taken,
+            borrowed_repaid_sum
+        );
+
+        let new_max_discount = self.compute_max_discount(&liquidation_account, &prices);
+        assert!(
+            new_max_discount > BigDecimal::zero(),
+            "The liquidation amount is too large. The liquidation account should stay in risk"
+        );
+        assert!(
+            new_max_discount < max_discount,
+            "The health factor of liquidation account can't decrease. New discount {} < old discount {}",
+            new_max_discount, max_discount
+        );
+
+        self.internal_account_apply_affected_farms(&mut liquidation_account);
+        self.internal_set_account(liquidation_account_id, liquidation_account);
+
+        events::emit::liquidate(
+            &account_id,
+            &liquidation_account_id,
+            &collateral_taken_sum,
+            &borrowed_repaid_sum,
+        );
+    }
+
+    pub fn internal_liquidate(
+        &mut self,
+        account_id: &AccountId,
+        account: &mut Account,
+        prices: &Prices,
+        liquidation_account_id: &AccountId,
+        in_assets: Vec<AssetAmount>,
+        out_assets: Vec<AssetAmount>,
+    ) {
+        let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
+
+        let max_discount = self.compute_max_discount(&liquidation_account, &prices);
+        assert!(
+            max_discount > BigDecimal::zero(),
+            "The liquidation account is not at risk"
+        );
+
+        let mut borrowed_repaid_sum = BigDecimal::zero();
+        let mut collateral_taken_sum = BigDecimal::zero();
+
+        for asset_amount in in_assets {
+            liquidation_account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
+            let mut account_asset = account.internal_unwrap_asset(&asset_amount.token_id);
+            let amount =
+                self.internal_repay(&mut account_asset, &mut liquidation_account, &asset_amount);
+            account.internal_set_asset(&asset_amount.token_id, account_asset);
+            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
+
+            borrowed_repaid_sum = borrowed_repaid_sum
+                + BigDecimal::from_balance_price(
+                    amount,
+                    prices.get_unwrap(&asset_amount.token_id),
+                    asset.config.extra_decimals,
+                );
+        }
+
+        for asset_amount in out_assets {
+            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
+            liquidation_account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
+            let mut account_asset = account.internal_get_asset_or_default(&asset_amount.token_id);
+
+            let amount = self.internal_decrease_supplied(
+                &mut account_asset,
+                &mut liquidation_account,
+                &asset_amount,
+            );
+            account.internal_set_asset(&asset_amount.token_id, account_asset);
+
+            collateral_taken_sum = collateral_taken_sum
+                + BigDecimal::from_balance_price(
+                    amount,
+                    prices.get_unwrap(&asset_amount.token_id),
+                    asset.config.extra_decimals,
                 );
         }
 
