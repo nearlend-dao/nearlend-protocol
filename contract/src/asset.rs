@@ -306,6 +306,7 @@ impl Contract {
             .collect()
     }
 
+    /// Returns the NFTs from the asset
     pub fn get_nft_assets_paged(
         &self,
         nft_contract_id: NFTContractId,
@@ -324,5 +325,16 @@ impl Contract {
         (from_index..std::cmp::min(values.len() as u64, from_index + limit))
             .map(|index| values.get(index as usize).unwrap().clone())
             .collect()
+    }
+
+    /// Returns the number of NFTs
+    pub fn get_num_nfts(&self, nft_contract_id: NFTContractId) -> u32 {
+        let nft_asset: Asset = self
+            .assets
+            .get(&nft_contract_id)
+            .expect("Can't get the NFT asset")
+            .into();
+
+        nft_asset.nft_supplied.len() as _
     }
 }
