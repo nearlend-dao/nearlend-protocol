@@ -61,6 +61,7 @@ fn test_liquidation_alice_by_bob() {
         price_data(&tokens, Some(120000), None),
         vec![asset_amount(&tokens.wnear, wnear_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
+        vec![],
     );
     res.assert_success();
     // println!("{:#?}", res.logs());
@@ -178,6 +179,7 @@ fn test_liquidation_decrease_health_factor() {
         price_data(&tokens, Some(120000), None),
         vec![asset_amount(&tokens.nusdt, usdt_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
+        vec![],
     );
     let err = match res.status() {
         ExecutionStatus::Failure(e) => e.to_string(),
@@ -198,6 +200,7 @@ fn test_liquidation_decrease_health_factor() {
             asset_amount(&tokens.nusdt, usdt_amount_in),
         ],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
+        vec![],
     );
     res.assert_success();
 
