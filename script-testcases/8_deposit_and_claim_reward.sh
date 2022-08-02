@@ -15,19 +15,14 @@ export GAS=200000000000000
 export DECIMAL_18=000000000000000000
 export ACCOUNT_TEST=nhtera.testnet
 
-# Chạy test deposit:
-# Ví dụ: Deposit vs 10 DAI 
-    # B1: Chạy file deploy
-    # B2: Thực hiện deposit vs 10 DAI vào MAIN_ACCOUNT
 
 
-###################### B1: Chạy file deploy #####################
+##################### B1: Chạy file deploy #####################
 ./0_deploy.sh
-###################### End B1: Chạy file deploy #####################
+##################### End B1: Chạy file deploy #####################
 
 
-###################### B2: Thực hiện deposit vs 10 DAI vào MAIN_ACCOUNT #####################
-
+##################### B2: Deposit 10 DAI #####################
 near call $DAI_TOKEN_ID --accountId=$MAIN_ACCOUNT ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "amount": "10'$DECIMAL_18'",
@@ -37,13 +32,12 @@ near call $DAI_TOKEN_ID --accountId=$MAIN_ACCOUNT ft_transfer_call '{
 near view $CONTRACT_ID get_account '{"account_id": "'$MAIN_ACCOUNT'"}' 
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
-###################### End B2: Thực hiện deposit vs 10 DAI vào MAIN_ACCOUNT #####################
+##################### End B2: Deposit 10 DAI #####################
 
-near call $DAI_TOKEN_ID --accountId=$MAIN_ACCOUNT ft_transfer_call '{
-  "receiver_id": "'$CONTRACT_ID'",
-  "amount": "10'$DECIMAL_18'",
-  "msg": ""
-}' --amount=$ONE_YOCTO --gas=$GAS
+###################### B3: Claim token NEL #####################
 
+# Claim Reward token
+near call $CONTRACT_ID --accountId=$MAIN_ACCOUNT account_farm_claim_all '{"account_id":  "'$MAIN_ACCOUNT'"}'
 near view $CONTRACT_ID get_account '{"account_id": "'$MAIN_ACCOUNT'"}' 
-near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
+
+###################### End B3: Claim token NEL #####################
