@@ -6,13 +6,11 @@ export ORACLE_ID=price-oracle.$MAIN_ACCOUNT
 export ACCOUNT_ID=$MAIN_ACCOUNT
 export NFT_CONTRACT_ID=nft.$MAIN_ACCOUNT
 export CONTRACT_ID=main.$MAIN_ACCOUNT
-export BOOSTER_TOKEN_ID=ref.fakes.testnet
+export BOOSTER_TOKEN_ID=ft.$MAIN_ACCOUNT
 export WETH_TOKEN_ID=weth.fakes.testnet
 export DAI_TOKEN_ID=dai.fakes.testnet
 export USDT_TOKEN_ID=usdt.fakes.testnet
 export USDC_TOKEN_ID=usdc.testnet
-export AURORAX_TOKEN_ID=aurorax.$OWNER_ID
-export NEL_TOKEN_ID=ft.$MAIN_ACCOUNT
 export WNEAR_TOKEN_ID=wrap.testnet
 export ONE_YOCTO=0.000000000000000000000001
 export GAS=200000000000000
@@ -58,7 +56,7 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
     "booster_token_id": "'$BOOSTER_TOKEN_ID'", 
     "booster_decimals": 18,
     "max_num_assets": 10,
-    "maximum_recency_duration_sec": 3600,
+    "maximum_recency_duration_sec": 9000,
     "maximum_staleness_duration_sec": 15,
     "minimum_staking_duration_sec": 2678400,
     "maximum_staking_duration_sec": 31536000,
@@ -73,9 +71,9 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
 
 ######################### B3: Deposit storage #########################
 
-# # Deposit BOOSTER_TOKEN_ID
-# near call $BOOSTER_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-# near call $BOOSTER_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
+# Deposit BOOSTER_TOKEN_ID
+near call $BOOSTER_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
+near call $BOOSTER_TOKEN_ID --accountId=$OWNER_ID storage_deposit '' --amount=0.00125
 
 # Deposit CONTRACT_ID 
 # near call $CONTRACT_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.1
@@ -331,6 +329,44 @@ near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
     "can_borrow": true
   }
 }' --amount=$ONE_YOCTO --gas=$GAS
+
+
+# Add assets token NEL to contract
+near call $CONTRACT_ID --accountId=$OWNER_ID add_asset '{
+  "token_id": "'$BOOSTER_TOKEN_ID'",
+   "asset_config": {
+    "reserve_ratio": 2500,
+    "target_utilization": 8000,
+    "target_utilization_rate": "1000000000001547125956667610",
+    "max_utilization_rate": "1000000000039724853136740579",
+    "volatility_ratio": 6000,
+    "extra_decimals": 0,
+    "can_deposit": true,
+    "can_withdraw": true,
+    "can_use_as_collateral": false,
+    "can_borrow": false
+  }
+}' --amount=$ONE_YOCTO --gas=$GAS
+
+# Deposit to reserved 500k NEL
+near call $BOOSTER_TOKEN_ID --accountId=$ACCOUNT_TEST ft_transfer_call '{
+  "receiver_id": "'$CONTRACT_ID'",
+  "amount": "500000'$DECIMAL_18'",
+  "msg": "\"DepositToReserve\""
+}' --amount=$ONE_YOCTO --gas=$GAS
+
+
+# Add reward for asset
+near call $CONTRACT_ID --accountId=$ACCOUNT_ID add_asset_farm_reward '{
+  "farm_id": {
+    "Supplied": "'$DAI_TOKEN_ID'"
+  },
+  "reward_token_id": "'$BOOSTER_TOKEN_ID'",
+  "reward_decimals": 18,
+  "new_reward_per_day": "100'$DECIMAL_18'",
+  "new_booster_log_base": "100'$DECIMAL_18'",
+  "reward_amount": "30000'$DECIMAL_18'"
+}' --deposit=$ONE_YOCTO --gas=$GAS
 
 ###################### End B5: Add asset #####################
 

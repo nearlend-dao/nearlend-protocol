@@ -74,6 +74,7 @@ pub struct Env {
     pub booster_token: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Tokens {
     pub wnear: UserAccount,
     pub neth: UserAccount,
@@ -82,6 +83,7 @@ pub struct Tokens {
     pub nusdc: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Users {
     pub alice: UserAccount,
     pub bob: UserAccount,
