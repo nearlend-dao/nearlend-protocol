@@ -23,7 +23,7 @@ pub mod emit {
 
     fn log_event<T: Serialize>(event: &str, data: T) {
         let event = json!({
-            "standard": "burrow",
+            "standard": "nearlend",
             "version": "1.0.0",
             "event": event,
             "data": [data]
@@ -127,28 +127,6 @@ pub mod emit {
             AccountNFTToken {
                 account_id: &account_id,
                 nft_contract_id: &nft_contract_id,
-                token_id: &token_id,
-            },
-        );
-    }
-
-    pub fn increase_collateral(account_id: &AccountId, amount: Balance, token_id: &TokenId) {
-        log_event(
-            "increase_collateral",
-            AccountAmountToken {
-                account_id: &account_id,
-                amount,
-                token_id: &token_id,
-            },
-        );
-    }
-
-    pub fn decrease_collateral(account_id: &AccountId, amount: Balance, token_id: &TokenId) {
-        log_event(
-            "decrease_collateral",
-            AccountAmountToken {
-                account_id: &account_id,
-                amount,
                 token_id: &token_id,
             },
         );

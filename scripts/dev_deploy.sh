@@ -16,7 +16,7 @@ OWNER_ID="$(cat neardev/dev-account)"
 ORACLE_ID="priceoracle.testnet"
 
 echo -e "$LG>>>>>>>>>>>>>>$TC Deploy the main contract $LG<<<<<<<<<<<<<<$NC"
-near dev-deploy -f res/burrowland.wasm
+near dev-deploy -f res/nearlend_protocol.wasm
 CONTRACT_ID="$(cat neardev/dev-account)"
 
 echo -e "$LG>>>>>>>>>>>>>>$TC Preparing Booster token $LG<<<<<<<<<<<<<<$NC"

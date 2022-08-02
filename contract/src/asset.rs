@@ -169,14 +169,18 @@ impl Contract {
             .iter()
             .position(|x| *x.token_id == token_id)
             .unwrap_or(MAX_ITEMS);
+
+        let mut deposit_timestamp = env::block_timestamp();
         if index != MAX_ITEMS {
+            let current_nft = asset.nft_supplied.get(index).expect("Can't find the nft");
+            deposit_timestamp = current_nft.deposit_timestamp;
             asset.nft_supplied.remove(index);
         }
 
         asset.nft_supplied.push(NftPool {
             owner_id,
-            token_id: token_id,
-            deposit_timestamp: env::block_timestamp(),
+            token_id,
+            deposit_timestamp,
         });
 
         ASSETS
@@ -256,7 +260,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let key = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&key).unwrap().into();
@@ -274,7 +278,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let token_id = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
@@ -282,5 +286,55 @@ impl Contract {
                 self.asset_into_detailed_view(token_id, asset)
             })
             .collect()
+    }
+
+    pub fn get_assets_apr(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<AssetAprViewJSon> {
+        let keys = self.asset_ids.as_vector();
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(keys.len());
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
+            .map(|index| {
+                let token_id = keys.get(index).unwrap();
+                let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
+                asset.update();
+                self.asset_into_apy_view(token_id, asset)
+            })
+            .collect()
+    }
+
+    /// Returns the NFTs from the asset
+    pub fn get_nft_assets_paged(
+        &self,
+        nft_contract_id: NFTContractId,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<NftPool> {
+        let nft_asset: Asset = self
+            .assets
+            .get(&nft_contract_id)
+            .expect("Can't get the NFT asset")
+            .into();
+
+        let values = nft_asset.nft_supplied;
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(values.len() as u64);
+        (from_index..std::cmp::min(values.len() as u64, from_index + limit))
+            .map(|index| values.get(index as usize).unwrap().clone())
+            .collect()
+    }
+
+    /// Returns the number of NFTs
+    pub fn get_num_nfts(&self, nft_contract_id: NFTContractId) -> u32 {
+        let nft_asset: Asset = self
+            .assets
+            .get(&nft_contract_id)
+            .expect("Can't get the NFT asset")
+            .into();
+
+        nft_asset.nft_supplied.len() as _
     }
 }

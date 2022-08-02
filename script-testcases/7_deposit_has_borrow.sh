@@ -24,8 +24,8 @@ export ACCOUNT_TEST=lam-test02.testnet
 # Ví dụ: Deposit vs 10 DAI  và withdraw 5 DAI
     # B1: Chạy file deploy
     # B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID
-    # B3: Thực hiện IncreaseCollateral vs 5 DAI
-    # B4: Thực hiện Borrow 1 DAI
+    # B3: Thực hiện Borrow 9 DAI
+    # B3: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID
 
 
 ###################### B1: Chạy file deploy #####################
@@ -38,7 +38,7 @@ near view $CONTRACT_ID get_diff_time ''
 
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
-  "amount": "155'$DECIMAL_18'",
+  "amount": "100'$DECIMAL_18'",
   "msg": ""
 }' --amount=$ONE_YOCTO --gas=$GAS
 
@@ -48,24 +48,7 @@ near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}
 ###################### End B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
 
 
-###################### B3: Thực hiện IncreaseCollateral vs 5 DAI #####################
-near call $CONTRACT_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO execute '{
-  "actions": [
-    {
-      "IncreaseCollateral": {
-        "token_id": "'$DAI_TOKEN_ID'",
-        "amount": "100'$DECIMAL_18'"
-      }
-    }
-  ]
-}'
-
-near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 
-near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
-###################### End B3: Thực hiện IncreaseCollateral vs 5 DAI #####################
-
-
-###################### B4: Thực hiện Borrow 1 DAI #####################
+###################### B3: Thực hiện Borrow 9 DAI #####################
 near call $ORACLE_ID --accountId=$OWNER_ID oracle_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "asset_ids": [
@@ -78,39 +61,34 @@ near call $ORACLE_ID --accountId=$OWNER_ID oracle_call '{
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}'
 near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
 
-###################### End B4: Thực hiện Borrow 1 DAI #####################
+###################### End B3: Thực hiện Borrow 9 DAI #####################
 
 
 near call $CONTRACT_ID set_diff_time '{"seconds": 2}' --accountId=$OWNER_ID
 near view $CONTRACT_ID get_diff_time ''
-###################### B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
+
+###################### B4: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
 
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
-  "amount": "100'$DECIMAL_18'",
+  "amount": "10'$DECIMAL_18'",
   "msg": ""
 }' --amount=$ONE_YOCTO --gas=$GAS
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_TEST'"}' 
 near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
 
-###################### End B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
+###################### End B4: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
 
 
 # near view nearlend.lam-test6.testnet get_account '{"account_id": "lam-test6.testnet"}' 
 # near view nearlend.lam-test6.testnet get_assets_paged '{"from_index": 0, "limit": 10}'
 
 
-# B1: A deposit 155 DAI
-# B2: A thế chấp 100 DAI
-# B3: A vay 9 DAI + Withdraw 9 DAI
-# => khi tính lãi suất: 155 DAI 
-
+# B1: A deposit 100 DAI
+# B2: A vay 9 DAI + Withdraw 9 DAI
+# => khi tính lãi suất: 100 DAI 
 
 # B4: B deposit 10 DAI
 
-
-
-
-# near view contract.main.burrow.near get_account '{"account_id": "oskarlee.near"}'
-
+# near view contract.nearlend.near get_account '{"account_id": "oskarlee.near"}'

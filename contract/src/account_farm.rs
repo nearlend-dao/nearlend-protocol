@@ -1,6 +1,17 @@
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
+#[derive(
+    BorshSerialize,
+    BorshDeserialize,
+    Serialize,
+    Deserialize,
+    Clone,
+    Hash,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug))]
 #[serde(crate = "near_sdk::serde")]
 pub enum FarmId {
@@ -18,16 +29,25 @@ impl FarmId {
 }
 
 /// A data required to keep track of a farm for an account.
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub struct AccountFarm {
     pub block_timestamp: Timestamp,
     pub rewards: HashMap<TokenId, AccountFarmReward>,
 }
 
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub struct AccountFarmReward {
     pub boosted_shares: Balance,
     pub last_reward_per_share: BigDecimal,
+}
+
+impl AccountFarm {
+    pub fn new() -> Self {
+        Self {
+            block_timestamp: 0,
+            rewards: HashMap::new(),
+        }
+    }
 }
 
 #[derive(BorshSerialize, BorshDeserialize)]
@@ -66,11 +86,8 @@ impl Contract {
         let mut account_farm: AccountFarm = account
             .farms
             .get(farm_id)
-            .map(|v| v.into())
-            .unwrap_or_else(|| AccountFarm {
-                block_timestamp: 0,
-                rewards: HashMap::new(),
-            });
+            .cloned()
+            .unwrap_or_else(AccountFarm::new);
         if account_farm.block_timestamp != block_timestamp {
             account_farm.block_timestamp = block_timestamp;
             let mut old_rewards = std::mem::take(&mut account_farm.rewards);
@@ -133,21 +150,21 @@ impl Contract {
             return;
         }
         let mut all_rewards: HashMap<TokenId, Balance> = HashMap::new();
-        let mut i = 0;
         let mut farms = vec![];
-        while i < account.affected_farms.len() {
-            let farm_id = account.affected_farms[i].clone();
+        let mut farms_ids: Vec<_> = account.affected_farms.iter().cloned().collect();
+        while let Some(farm_id) = farms_ids.pop() {
             if let Some(asset_farm) = self.internal_get_asset_farm(&farm_id, false) {
                 let (account_farm, new_rewards, inactive_rewards) =
                     self.internal_account_farm_claim(account, &farm_id, &asset_farm);
                 for (token_id, amount) in new_rewards {
                     let new_farm_id = FarmId::Supplied(token_id.clone());
-                    account.add_affected_farm(new_farm_id);
                     *all_rewards.entry(token_id).or_default() += amount;
+                    if account.add_affected_farm(new_farm_id.clone()) {
+                        farms_ids.push(new_farm_id);
+                    }
                 }
                 farms.push((farm_id, account_farm, asset_farm, inactive_rewards));
             }
-            i += 1;
         }
         for (token_id, &reward) in &all_rewards {
             self.internal_deposit(account, &token_id, reward);
@@ -190,14 +207,12 @@ impl Contract {
                 asset_farm_reward.boosted_shares -= boosted_shares;
                 asset_farm.internal_set_inactive_asset_farm_reward(&token_id, asset_farm_reward);
             }
-            account.storage_tracker.start();
+            self.internal_set_asset_farm(&farm_id, asset_farm);
             if shares > 0 {
-                account.farms.insert(&farm_id, &account_farm.into());
+                account.farms.insert(farm_id, account_farm);
             } else {
                 account.farms.remove(&farm_id);
             }
-            account.storage_tracker.stop();
-            self.internal_set_asset_farm(&farm_id, asset_farm);
         }
     }
 }
@@ -205,8 +220,8 @@ impl Contract {
 #[near_bindgen]
 impl Contract {
     /// Claims all unclaimed farm rewards and starts farming new farms.
-    pub fn account_farm_claim_all(&mut self) {
-        let account_id = env::predecessor_account_id();
+    pub fn account_farm_claim_all(&mut self, account_id: Option<AccountId>) {
+        let account_id = account_id.unwrap_or_else(env::predecessor_account_id);
         let mut account = self.internal_unwrap_account(&account_id);
         account
             .affected_farms

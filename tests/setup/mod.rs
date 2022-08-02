@@ -2,6 +2,7 @@
 
 use common::{AssetOptionalPrice, DurationSec, Price, PriceData, ONE_YOCTO};
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
+use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::json;
 use near_sdk::{env, serde_json, AccountId, Balance, Gas, Timestamp};
@@ -10,47 +11,47 @@ use near_sdk_sim::{
     deploy, init_simulator, to_yocto, ContractAccount, ExecutionResult, UserAccount,
 };
 
-use contract::FarmId;
 pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
-    ContractContract as BurrowlandContract, PriceReceiverMsg, TokenReceiverMsg,
+    ContractContract as NearlendContract, PriceReceiverMsg, TokenReceiverMsg,
 };
+use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
-    BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
-    BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
-    BURROWLAND_0_4_0_WASM_BYTES => "res/burrowland_0.4.0.wasm",
-    BURROWLAND_PREVIOUS_WASM_BYTES => "res/burrowland_0.5.1.wasm",
+    NEARLEND_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_4_0_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol.wasm",
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
-
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
 
-pub fn burrowland_0_3_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_3_0_WASM_BYTES
+pub fn nearlend_0_3_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_3_0_WASM_BYTES
 }
 
-pub fn burrowland_0_4_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_4_0_WASM_BYTES
+pub fn nearlend_0_4_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_4_0_WASM_BYTES
 }
 
-pub fn burrowland_previous_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_PREVIOUS_WASM_BYTES
+pub fn nearlend_previous_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_PREVIOUS_WASM_BYTES
 }
 
-pub fn burrowland_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_WASM_BYTES
+pub fn nearlend_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_WASM_BYTES
 }
 
 pub const NEAR: &str = "near";
 pub const ORACLE_ID: &str = "oracle.near";
-pub const BURROWLAND_ID: &str = "burrowland.near";
-pub const BOOSTER_TOKEN_ID: &str = "token.burrowland.near";
+pub const NEARLEND_ID: &str = "nearlend.near";
+pub const BOOSTER_TOKEN_ID: &str = "token.nearlend.near";
 pub const OWNER_ID: &str = "owner.near";
 
-pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
+// pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
+pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 100);
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 pub const BOOSTER_TOKEN_DECIMALS: u8 = 18;
 pub const BOOSTER_TOKEN_TOTAL_SUPPLY: Balance =
@@ -69,10 +70,11 @@ pub struct Env {
     pub near: UserAccount,
     pub owner: UserAccount,
     pub oracle: ContractAccount<OracleContract>,
-    pub contract: ContractAccount<BurrowlandContract>,
+    pub contract: ContractAccount<NearlendContract>,
     pub booster_token: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Tokens {
     pub wnear: UserAccount,
     pub neth: UserAccount,
@@ -81,6 +83,7 @@ pub struct Tokens {
     pub nusdc: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Users {
     pub alice: UserAccount,
     pub bob: UserAccount,
@@ -146,8 +149,8 @@ impl Env {
         );
 
         let contract = deploy!(
-            contract: BurrowlandContract,
-            contract_id: BURROWLAND_ID.to_string(),
+            contract: NearlendContract,
+            contract_id: NEARLEND_ID.to_string(),
             bytes: &contract_bytes,
             signer_account: near,
             deposit: to_yocto("20"),
@@ -192,7 +195,7 @@ impl Env {
             DEFAULT_GAS.0,
         );
 
-        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(BURROWLAND_ID));
+        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
 
         Self {
             root,
@@ -205,13 +208,13 @@ impl Env {
     }
 
     pub fn init() -> Self {
-        Self::init_with_contract(&BURROWLAND_WASM_BYTES)
+        Self::init_with_contract(&NEARLEND_WASM_BYTES)
     }
 
     pub fn deploy_contract_by_key(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.contract
             .user_account
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .deploy_contract(contract_bytes.to_vec())
             .function_call(
                 "migrate_state".to_string(),
@@ -224,7 +227,7 @@ impl Env {
 
     pub fn deploy_contract_by_owner(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.owner
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .function_call("upgrade".to_string(), contract_bytes.to_vec(), MAX_GAS.0, 0)
             .submit()
     }
@@ -446,6 +449,18 @@ impl Env {
         asset.unwrap()
     }
 
+    pub fn get_asset_farm(&self, farm_id: FarmId) -> AssetFarmView {
+        let asset_farm: Option<serde_json::value::Value> = self
+            .near
+            .view_method_call(self.contract.contract.get_asset_farm(farm_id.clone()))
+            .unwrap_json();
+        let asset_farm = asset_farm.unwrap();
+        AssetFarmView {
+            farm_id,
+            rewards: serde_json::from_value(asset_farm["rewards"].clone()).unwrap(),
+        }
+    }
+
     pub fn get_account(&self, user: &UserAccount) -> AccountDetailedView {
         let account: Option<AccountDetailedView> = self
             .near
@@ -454,25 +469,29 @@ impl Env {
         account.unwrap()
     }
 
+    pub fn storage_balance_of(&self, user: &UserAccount) -> Option<StorageBalance> {
+        self.near
+            .view_method_call(self.contract.contract.storage_balance_of(user.account_id()))
+            .unwrap_json()
+    }
+
+    pub fn debug_storage_balance_of(&self, user: &UserAccount) -> Option<StorageBalance> {
+        self.near
+            .view_method_call(
+                self.contract
+                    .contract
+                    .debug_storage_balance_of(user.account_id()),
+            )
+            .unwrap_json()
+    }
+
     pub fn supply_to_collateral(
         &self,
         user: &UserAccount,
         token: &UserAccount,
         amount: Balance,
     ) -> ExecutionResult {
-        self.contract_ft_transfer_call(
-            &token,
-            &user,
-            amount,
-            &serde_json::to_string(&TokenReceiverMsg::Execute {
-                actions: vec![Action::IncreaseCollateral(AssetAmount {
-                    token_id: token.account_id(),
-                    amount: None,
-                    max_amount: None,
-                })],
-            })
-            .unwrap(),
-        )
+        self.contract_ft_transfer_call(&token, &user, amount, "")
     }
 
     pub fn oracle_call(
@@ -534,6 +553,7 @@ impl Env {
         price_data: PriceData,
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
     ) -> ExecutionResult {
         self.oracle_call(
             &user,
@@ -543,6 +563,7 @@ impl Env {
                     account_id: liquidation_user.account_id(),
                     in_assets,
                     out_assets,
+                    out_nft_assets,
                 }],
             },
         )
@@ -617,7 +638,21 @@ impl Env {
 
     pub fn account_farm_claim_all(&self, user: &UserAccount) -> ExecutionResult {
         user.function_call(
-            self.contract.contract.account_farm_claim_all(),
+            self.contract.contract.account_farm_claim_all(None),
+            MAX_GAS.0,
+            0,
+        )
+    }
+
+    pub fn account_farm_claim_all_on_behalf(
+        &self,
+        caller: &UserAccount,
+        user: &UserAccount,
+    ) -> ExecutionResult {
+        caller.function_call(
+            self.contract
+                .contract
+                .account_farm_claim_all(Some(user.account_id())),
             MAX_GAS.0,
             0,
         )
@@ -757,12 +792,19 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
         &users.bob.account_id(),
         d(1, 23),
     );
+    e.mint_tokens(&tokens, &users.charlie);
+    storage_deposit(
+        &users.charlie,
+        &e.contract.account_id(),
+        &users.charlie.account_id(),
+        d(1, 23),
+    );
 
     (e, tokens, users)
 }
 
 pub fn basic_setup() -> (Env, Tokens, Users) {
-    basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
+    basic_setup_with_contract(&NEARLEND_WASM_BYTES)
 }
 
 pub fn sec_to_nano(sec: u32) -> u64 {
@@ -785,4 +827,39 @@ pub fn get_logs(runtime: &RuntimeStandalone) -> Vec<String> {
         .iter()
         .flat_map(|hash| runtime.outcome(hash).map(|o| o.logs).unwrap_or_default())
         .collect()
+}
+
+pub fn find_asset<'a>(assets: &'a [AssetView], token_id: &AccountId) -> &'a AssetView {
+    assets
+        .iter()
+        .find(|e| &e.token_id == token_id)
+        .expect("Missing asset")
+}
+
+pub fn assert_balances(actual: &[AssetView], expected: &[AssetView]) {
+    assert_eq!(actual.len(), expected.len());
+    for asset in actual {
+        assert_eq!(asset.balance, find_asset(expected, &asset.token_id).balance);
+    }
+}
+
+pub fn av(token_id: AccountId, balance: Balance) -> AssetView {
+    AssetView {
+        token_id,
+        balance,
+        shares: U128(0),
+        apr: Default::default(),
+    }
+}
+
+pub fn almost_eq(a: u128, b: u128, prec: u32) {
+    let p = 10u128.pow(27 - prec);
+    let ap = (a + p / 2) / p;
+    let bp = (b + p / 2) / p;
+    assert_eq!(
+        ap,
+        bp,
+        "{}",
+        format!("Expected {} to eq {}, with precision {}", a, b, prec)
+    );
 }

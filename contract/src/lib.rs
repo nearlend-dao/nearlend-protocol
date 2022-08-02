@@ -5,6 +5,7 @@ mod account_nft_asset;
 mod account_view;
 mod actions;
 mod asset;
+mod asset_apr;
 mod asset_config;
 mod asset_farm;
 mod asset_view;
@@ -31,6 +32,7 @@ pub use crate::account_nft_asset::*;
 pub use crate::account_view::*;
 pub use crate::actions::*;
 pub use crate::asset::*;
+pub use crate::asset_apr::*;
 pub use crate::asset_config::*;
 pub use crate::asset_farm::*;
 pub use crate::asset_view::*;
@@ -65,15 +67,15 @@ use std::sync::Mutex;
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     Accounts,
-    AccountAssets { account_id: AccountId },
-    AccountFarms { account_id: AccountId },
+    // AccountAssets { account_id: AccountId },
+    // AccountFarms { account_id: AccountId },
     Storage,
     Assets,
     AssetFarms,
     InactiveAssetFarmRewards { farm_id: FarmId },
     AssetIds,
     Config,
-    AccountNftAssets { account_id: AccountId },
+    // AccountNftAssets { account_id: AccountId },
 }
 
 #[near_bindgen]

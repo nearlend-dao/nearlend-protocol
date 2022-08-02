@@ -29,8 +29,6 @@ pub struct NFTAsset {
 pub enum Action {
     Withdraw(AssetAmount),
     WithdrawNFT(NFTAsset),
-    IncreaseCollateral(AssetAmount),
-    DecreaseCollateral(AssetAmount),
     Borrow(AssetAmount),
     Repay(AssetAmount),
     Liquidate {
@@ -38,7 +36,12 @@ pub enum Action {
         in_assets: Vec<AssetAmount>,
         out_assets: Vec<AssetAmount>,
     },
-    /// If the sum of burrowed assets exceeds the collateral, the account will be liquidated
+    LiquidateNFT {
+        account_id: AccountId,
+        in_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
+    },
+    /// If the sum of borrowed assets exceeds the collateral, the account will be liquidated
     /// using reserves.
     ForceClose {
         account_id: AccountId,
@@ -58,6 +61,7 @@ impl Contract {
         for action in actions {
             match action {
                 Action::Withdraw(asset_amount) => {
+                    need_risk_check = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     let amount = self.internal_withdraw(account, &asset_amount);
                     self.internal_ft_transfer(account_id, &asset_amount.token_id, amount);
@@ -65,7 +69,6 @@ impl Contract {
                 }
                 Action::WithdrawNFT(nft_asset) => {
                     need_risk_check = true;
-                    // account.add_affected_farm(FarmId::Supplied(nft_asset.nft_contract_id.clone()));
                     self.internal_withdraw_nft(account_id, account, &nft_asset);
                     self.internal_nft_transfer(
                         account_id,
@@ -77,23 +80,6 @@ impl Contract {
                         &nft_asset.nft_contract_id,
                         &nft_asset.token_id,
                     );
-                }
-                Action::IncreaseCollateral(asset_amount) => {
-                    need_number_check = true;
-                    let amount = self.internal_increase_collateral(account, &asset_amount);
-                    events::emit::increase_collateral(&account_id, amount, &asset_amount.token_id);
-                }
-                Action::DecreaseCollateral(asset_amount) => {
-                    need_risk_check = true;
-                    let mut account_asset =
-                        account.internal_get_asset_or_default(&asset_amount.token_id);
-                    let amount = self.internal_decrease_collateral(
-                        &mut account_asset,
-                        account,
-                        &asset_amount,
-                    );
-                    account.internal_set_asset(&asset_amount.token_id, account_asset);
-                    events::emit::decrease_collateral(&account_id, amount, &asset_amount.token_id);
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
@@ -120,7 +106,8 @@ impl Contract {
                         account_id, &liquidation_account_id,
                         "Can't liquidate yourself"
                     );
-                    assert!(!in_assets.is_empty() && !out_assets.is_empty());
+                    assert!(!in_assets.is_empty());
+                    assert!(!out_assets.is_empty());
                     self.internal_liquidate(
                         account_id,
                         account,
@@ -128,6 +115,27 @@ impl Contract {
                         &liquidation_account_id,
                         in_assets,
                         out_assets,
+                    );
+                }
+
+                Action::LiquidateNFT {
+                    account_id: liquidation_account_id,
+                    in_assets,
+                    out_nft_assets,
+                } => {
+                    assert_ne!(
+                        account_id, &liquidation_account_id,
+                        "Can't liquidate yourself"
+                    );
+                    assert!(!in_assets.is_empty());
+                    assert!(!out_nft_assets.is_empty());
+                    self.internal_liquidate_nft(
+                        account_id,
+                        account,
+                        &prices,
+                        &liquidation_account_id,
+                        in_assets,
+                        out_nft_assets,
                     );
                 }
                 Action::ForceClose {
@@ -143,7 +151,7 @@ impl Contract {
         }
         if need_number_check {
             assert!(
-                account.collateral.len() + account.borrowed.len()
+                account.supplied.len() as usize + account.borrowed.len()
                     <= self.internal_config().max_num_assets as _
             );
         }
@@ -275,43 +283,22 @@ impl Contract {
         );
     }
 
-    pub fn internal_increase_collateral(
-        &mut self,
-        account: &mut Account,
-        asset_amount: &AssetAmount,
-    ) -> Balance {
-        let asset = self.internal_unwrap_asset(&asset_amount.token_id);
-        assert!(
-            asset.config.can_use_as_collateral,
-            "Thi asset can't be used as a collateral"
-        );
-
-        let mut account_asset = account.internal_unwrap_asset(&asset_amount.token_id);
-
-        let (shares, amount) =
-            asset_amount_to_shares(&asset.supplied, account_asset.shares, &asset_amount, false);
-
-        account_asset.withdraw_shares(shares);
-        account.internal_set_asset(&asset_amount.token_id, account_asset);
-
-        account.increase_collateral(&asset_amount.token_id, shares);
-
-        amount
-    }
-
-    pub fn internal_decrease_collateral(
+    pub fn internal_decrease_supplied(
         &mut self,
         account_asset: &mut AccountAsset,
         account: &mut Account,
         asset_amount: &AssetAmount,
     ) -> Balance {
         let asset = self.internal_unwrap_asset(&asset_amount.token_id);
-        let collateral_shares = account.internal_unwrap_collateral(&asset_amount.token_id);
+
+        let mut account_asset_liquidation = account.internal_unwrap_asset(&asset_amount.token_id);
+        let supplied_shares = account_asset_liquidation.shares;
 
         let (shares, amount) =
-            asset_amount_to_shares(&asset.supplied, collateral_shares, &asset_amount, false);
+            asset_amount_to_shares(&asset.supplied, supplied_shares, &asset_amount, false);
 
-        account.decrease_collateral(&asset_amount.token_id, shares);
+        account_asset_liquidation.withdraw_shares(shares);
+        account.internal_set_asset(&asset_amount.token_id, account_asset_liquidation);
 
         account_asset.deposit_shares(shares);
 
@@ -396,6 +383,123 @@ impl Contract {
         amount
     }
 
+    pub fn internal_liquidate_nft(
+        &mut self,
+        account_id: &AccountId,
+        account: &mut Account,
+        prices: &Prices,
+        liquidation_account_id: &AccountId,
+        in_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
+    ) {
+        let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
+
+        let max_discount = self.compute_max_discount(&liquidation_account, &prices);
+        assert!(
+            max_discount > BigDecimal::zero(),
+            "The liquidation account is not at risk"
+        );
+
+        let mut borrowed_repaid_sum = BigDecimal::zero();
+        let mut collateral_taken_sum = BigDecimal::zero();
+
+        for asset_amount in in_assets {
+            liquidation_account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
+            let mut account_asset = account.internal_unwrap_asset(&asset_amount.token_id);
+            let amount =
+                self.internal_repay(&mut account_asset, &mut liquidation_account, &asset_amount);
+            account.internal_set_asset(&asset_amount.token_id, account_asset);
+            let asset = self.internal_unwrap_asset(&asset_amount.token_id);
+
+            borrowed_repaid_sum = borrowed_repaid_sum
+                + BigDecimal::from_balance_price(
+                    amount,
+                    prices.get_unwrap(&asset_amount.token_id),
+                    asset.config.extra_decimals,
+                );
+        }
+
+        for nft_asset in out_nft_assets {
+            let asset = self.internal_unwrap_asset(&nft_asset.nft_contract_id);
+            let config_extra_decimals = asset.config.extra_decimals.clone();
+
+            // Check NFT owner from liquidation account
+            if let Some(owner_id) = asset.get_owner_nft(&nft_asset.token_id, &asset) {
+                assert_eq!(
+                        liquidation_account_id.clone(),
+                        owner_id,
+                        "You are not authorized. You can only liquidate nft from the liquidation account {}",
+                        owner_id
+                    );
+            } else {
+                env::panic_str("NFT notfound");
+            }
+
+            // Get NFT from liquidation account
+            let contract_nft_token_id: NFTContractTokenId = format!(
+                "{}{}{}",
+                nft_asset.nft_contract_id, NFT_DELIMETER, nft_asset.token_id
+            );
+            let account_nft_asset =
+                liquidation_account.internal_get_nft_asset_or_default(&contract_nft_token_id);
+            let account_nft_asset_tranfer = account_nft_asset.clone();
+
+            // Remove NFT from liquidation account
+            liquidation_account
+                .nft_supplied
+                .remove(&contract_nft_token_id);
+
+            // Add NFT to liquidator account
+            account.internal_set_nft_asset(&contract_nft_token_id, account_nft_asset_tranfer);
+
+            // Transfer owner NFT to liquidator account
+            self.internal_set_nft_asset(
+                &nft_asset.nft_contract_id,
+                account_id.clone(),
+                nft_asset.token_id.clone(),
+                asset,
+            );
+
+            // Fix NFT balance is 1 (decimals 24)
+            let balance = 1 * 10u128.pow(24);
+            collateral_taken_sum = collateral_taken_sum
+                + BigDecimal::from_balance_price(
+                    balance,
+                    prices.get_unwrap(&nft_asset.nft_contract_id),
+                    config_extra_decimals,
+                );
+        }
+
+        let discounted_collateral_taken = collateral_taken_sum * (BigDecimal::one() - max_discount);
+        assert!(
+            discounted_collateral_taken <= borrowed_repaid_sum,
+            "Not enough balances repaid: discounted collateral {} > borrowed repaid sum {}",
+            discounted_collateral_taken,
+            borrowed_repaid_sum
+        );
+
+        let new_max_discount = self.compute_max_discount(&liquidation_account, &prices);
+        assert!(
+            new_max_discount > BigDecimal::zero(),
+            "The liquidation amount is too large. The liquidation account should stay in risk"
+        );
+        assert!(
+            new_max_discount < max_discount,
+            "The health factor of liquidation account can't decrease. New discount {} < old discount {}",
+            new_max_discount, max_discount
+        );
+
+        self.internal_account_apply_affected_farms(&mut liquidation_account);
+        self.internal_set_account(liquidation_account_id, liquidation_account);
+
+        events::emit::liquidate(
+            &account_id,
+            &liquidation_account_id,
+            &collateral_taken_sum,
+            &borrowed_repaid_sum,
+        );
+    }
+
     pub fn internal_liquidate(
         &mut self,
         account_id: &AccountId,
@@ -436,7 +540,8 @@ impl Contract {
             let asset = self.internal_unwrap_asset(&asset_amount.token_id);
             liquidation_account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
             let mut account_asset = account.internal_get_asset_or_default(&asset_amount.token_id);
-            let amount = self.internal_decrease_collateral(
+
+            let amount = self.internal_decrease_supplied(
                 &mut account_asset,
                 &mut liquidation_account,
                 &asset_amount,
@@ -495,43 +600,41 @@ impl Contract {
 
         let mut affected_farms = vec![];
 
-        for collateral_asset in liquidation_account.collateral.drain(..) {
-            let mut asset = self.internal_unwrap_asset(&collateral_asset.token_id);
-            let amount = asset
-                .supplied
-                .shares_to_amount(collateral_asset.shares, false);
+        for (token_id, shares) in liquidation_account.supplied.drain() {
+            let mut asset = self.internal_unwrap_asset(&token_id);
+            let amount = asset.supplied.shares_to_amount(shares, false);
             asset.reserved += amount;
-            asset.supplied.withdraw(collateral_asset.shares, amount);
+            asset.supplied.withdraw(shares, amount);
 
             collateral_sum = collateral_sum
                 + BigDecimal::from_balance_price(
                     amount,
-                    prices.get_unwrap(&collateral_asset.token_id),
+                    prices.get_unwrap(&token_id),
                     asset.config.extra_decimals,
                 );
-            self.internal_set_asset(&collateral_asset.token_id, asset);
-            affected_farms.push(FarmId::Supplied(collateral_asset.token_id));
+            self.internal_set_asset(&token_id, asset);
+            affected_farms.push(FarmId::Supplied(token_id));
         }
 
-        for borrowed_asset in liquidation_account.borrowed.drain(..) {
-            let mut asset = self.internal_unwrap_asset(&borrowed_asset.token_id);
-            let amount = asset.borrowed.shares_to_amount(borrowed_asset.shares, true);
+        for (token_id, shares) in liquidation_account.borrowed.drain() {
+            let mut asset = self.internal_unwrap_asset(&token_id);
+            let amount = asset.borrowed.shares_to_amount(shares, true);
             assert!(
                 asset.reserved >= amount,
                 "Not enough {} in reserve",
-                borrowed_asset.token_id
+                token_id
             );
             asset.reserved -= amount;
-            asset.borrowed.withdraw(borrowed_asset.shares, amount);
+            asset.borrowed.withdraw(shares, amount);
 
             borrowed_sum = borrowed_sum
                 + BigDecimal::from_balance_price(
                     amount,
-                    prices.get_unwrap(&borrowed_asset.token_id),
+                    prices.get_unwrap(&token_id),
                     asset.config.extra_decimals,
                 );
-            self.internal_set_asset(&borrowed_asset.token_id, asset);
-            affected_farms.push(FarmId::Borrowed(borrowed_asset.token_id));
+            self.internal_set_asset(&token_id, asset);
+            affected_farms.push(FarmId::Borrowed(token_id));
         }
 
         assert!(
@@ -553,55 +656,51 @@ impl Contract {
             return BigDecimal::zero();
         }
 
-        let collateral_sum = account
-            .collateral
-            .iter()
-            .fold(BigDecimal::zero(), |sum, c| {
-                let asset = self.internal_unwrap_asset(&c.token_id);
-                let balance = asset.supplied.shares_to_amount(c.shares, false);
-                sum + BigDecimal::from_balance_price(
-                    balance,
-                    prices.get_unwrap(&c.token_id),
-                    asset.config.extra_decimals,
-                )
-                .mul_ratio(asset.config.volatility_ratio)
-            });
-
-        let nft_collateral_sum = account.nft_supplied.iter().fold(
-            BigDecimal::zero(),
-            |sum,
-             (
-                _,
-                AccountNFTAsset {
-                    nft_contract_id,
-                    nft_token_id: _,
-                    deposit_timestamp: _,
-                },
-            )| {
-                let asset = self.internal_unwrap_asset(&nft_contract_id);
-
-                // Fix NFT balance is 1 (decimals 24)
-                let balance = 1 * 10u128.pow(24);
-                return sum
-                    + BigDecimal::from_balance_price(
+        let collateral_sum =
+            account
+                .supplied
+                .iter()
+                .fold(BigDecimal::zero(), |sum, (token_id, shares)| {
+                    let asset = self.internal_unwrap_asset(&token_id);
+                    let balance = asset.supplied.shares_to_amount(*shares, false);
+                    sum + BigDecimal::from_balance_price(
                         balance,
-                        prices.get_unwrap(&nft_contract_id),
+                        prices.get_unwrap(&token_id),
                         asset.config.extra_decimals,
                     )
-                    .mul_ratio(asset.config.volatility_ratio);
-            },
-        );
+                    .mul_ratio(asset.config.volatility_ratio)
+                });
 
-        let borrowed_sum = account.borrowed.iter().fold(BigDecimal::zero(), |sum, b| {
-            let asset = self.internal_unwrap_asset(&b.token_id);
-            let balance = asset.borrowed.shares_to_amount(b.shares, true);
-            sum + BigDecimal::from_balance_price(
-                balance,
-                prices.get_unwrap(&b.token_id),
-                asset.config.extra_decimals,
-            )
-            .div_ratio(asset.config.volatility_ratio)
-        });
+        let nft_collateral_sum =
+            account
+                .nft_supplied
+                .iter()
+                .fold(BigDecimal::zero(), |sum, (_, account_nft_asset)| {
+                    let asset = self.internal_unwrap_asset(&account_nft_asset.nft_contract_id);
+                    // Fix NFT balance is 1 (decimals 24)
+                    let balance = 1 * 10u128.pow(24);
+                    sum + BigDecimal::from_balance_price(
+                        balance,
+                        prices.get_unwrap(&account_nft_asset.nft_contract_id),
+                        asset.config.extra_decimals,
+                    )
+                    .mul_ratio(asset.config.volatility_ratio)
+                });
+
+        let borrowed_sum =
+            account
+                .borrowed
+                .iter()
+                .fold(BigDecimal::zero(), |sum, (token_id, shares)| {
+                    let asset = self.internal_unwrap_asset(&token_id);
+                    let balance = asset.borrowed.shares_to_amount(*shares, true);
+                    sum + BigDecimal::from_balance_price(
+                        balance,
+                        prices.get_unwrap(&token_id),
+                        asset.config.extra_decimals,
+                    )
+                    .div_ratio(asset.config.volatility_ratio)
+                });
 
         let total_collateral_sum = collateral_sum.add(nft_collateral_sum);
 

@@ -5,6 +5,7 @@ pub(crate) type NFTContractId = AccountId;
 pub(crate) type NFTTokenId = String;
 pub(crate) type NFTContractTokenId = String;
 
+#[allow(unused)]
 pub(crate) fn unordered_map_pagination<K, VV, V>(
     m: &UnorderedMap<K, VV>,
     from_index: Option<u64>,
@@ -19,7 +20,7 @@ where
     let values = m.values_as_vector();
     let from_index = from_index.unwrap_or(0);
     let limit = limit.unwrap_or(keys.len());
-    (from_index..std::cmp::min(keys.len(), limit))
+    (from_index..std::cmp::min(keys.len(), from_index + limit))
         .map(|index| (keys.get(index).unwrap(), values.get(index).unwrap().into()))
         .collect()
 }

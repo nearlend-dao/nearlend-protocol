@@ -22,9 +22,8 @@ export DECIMAL_18=000000000000000000
 # Ví dụ: Deposit vs 10 DAI  và withdraw 5 DAI
     # B1: Chạy file deploy
     # B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID
-    # B3: Thực hiện IncreaseCollateral vs 5 DAI
-    # B4: Thực hiện Borrow 2 DAI
-    # B5: Thực hiện Repay 1 DAI
+    # B3: Thực hiện Borrow 2 DAI
+    # B4: Thực hiện Repay 1 DAI
 
 
 ###################### B1: Chạy file deploy #####################
@@ -45,25 +44,7 @@ near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
 ###################### End B2: Thực hiện deposit vs 10 DAI vào ACCOUNT_ID #####################
 
-
-###################### B3: Thực hiện IncreaseCollateral vs 5 DAI #####################
-near call $CONTRACT_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO execute '{
-  "actions": [
-    {
-      "IncreaseCollateral": {
-        "token_id": "'$DAI_TOKEN_ID'",
-        "amount": "5'$DECIMAL_18'"
-      }
-    }
-  ]
-}'
-
-near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}' 
-near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
-###################### End B3: Thực hiện IncreaseCollateral vs 5 DAI #####################
-
-
-###################### B4: Thực hiện Borrow 1 DAI #####################
+###################### B3: Thực hiện Borrow 1 DAI #####################
 near call $ORACLE_ID --accountId=$OWNER_ID oracle_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "asset_ids": [
@@ -76,10 +57,10 @@ near call $ORACLE_ID --accountId=$OWNER_ID oracle_call '{
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}'
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
 
-###################### End B4: Thực hiện Borrow 1 DAI #####################
+###################### End B3: Thực hiện Borrow 1 DAI #####################
 
 
-###################### B5: Thực hiện Repay 1 DAI #####################
+###################### B4: Thực hiện Repay 1 DAI #####################
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
   "amount": "1'$DECIMAL_18'",
@@ -88,4 +69,4 @@ near call $DAI_TOKEN_ID --accountId=$ACCOUNT_ID --gas=$GAS --amount=$ONE_YOCTO f
 
 near view $CONTRACT_ID get_account '{"account_id": "'$ACCOUNT_ID'"}'
 near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
-###################### End B5: Thực hiện Repay 1 DAI #####################
+###################### End B4: Thực hiện Repay 1 DAI #####################

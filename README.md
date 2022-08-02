@@ -863,3 +863,7 @@ Example result:
   farms: []
 }
 ```
+
+
+
+cargo test --test farms  -- --nocapture

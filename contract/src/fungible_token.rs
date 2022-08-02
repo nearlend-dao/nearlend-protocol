@@ -38,17 +38,19 @@ impl FungibleTokenReceiver for Contract {
 
         // TODO: We need to be careful that only whitelisted tokens can call this method with a
         //     given set of actions. Or verify which actions are possible to do.
-        assert_eq!(!msg.is_empty(), true, "Action not empty");
-
-        let token_receiver_msg: TokenReceiverMsg =
-            serde_json::from_str(&msg).expect("Can't parse TokenReceiverMsg");
-        let actions: Vec<Action> = match token_receiver_msg {
-            TokenReceiverMsg::Execute { actions } => actions,
-            TokenReceiverMsg::DepositToReserve => {
-                asset.reserved += amount;
-                self.internal_set_asset(&token_id, asset);
-                events::emit::deposit_to_reserve(&sender_id, amount, &token_id);
-                return PromiseOrValue::Value(U128(0));
+        let actions: Vec<Action> = if msg.is_empty() {
+            vec![]
+        } else {
+            let token_receiver_msg: TokenReceiverMsg =
+                serde_json::from_str(&msg).expect("Can't parse TokenReceiverMsg");
+            match token_receiver_msg {
+                TokenReceiverMsg::Execute { actions } => actions,
+                TokenReceiverMsg::DepositToReserve => {
+                    asset.reserved += amount;
+                    self.internal_set_asset(&token_id, asset);
+                    events::emit::deposit_to_reserve(&sender_id, amount, &token_id);
+                    return PromiseOrValue::Value(U128(0));
+                }
             }
         };
 

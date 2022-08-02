@@ -19,7 +19,7 @@ fn test_version() {
 
 #[test]
 fn test_upgrade_with_private_key() {
-    let (e, tokens, users) = basic_setup_with_contract(burrowland_0_3_0_wasm_bytes());
+    let (e, tokens, users) = basic_setup_with_contract(nearlend_0_3_0_wasm_bytes());
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -34,7 +34,7 @@ fn test_upgrade_with_private_key() {
         .view_method_call(e.contract.contract.get_version())
         .is_err());
 
-    e.deploy_contract_by_key(burrowland_0_4_0_wasm_bytes())
+    e.deploy_contract_by_key(nearlend_0_4_0_wasm_bytes())
         .assert_success();
 
     let asset = e.get_asset(&tokens.wnear);
@@ -50,7 +50,7 @@ fn test_upgrade_with_private_key() {
 
 #[test]
 fn test_upgrade_by_owner() {
-    let (e, tokens, users) = basic_setup_with_contract(burrowland_previous_wasm_bytes());
+    let (e, tokens, users) = basic_setup_with_contract(nearlend_previous_wasm_bytes());
 
     let amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.alice, amount, "")
@@ -66,7 +66,7 @@ fn test_upgrade_by_owner() {
 
     assert_eq!(version, PREVIOUS_VERSION);
 
-    e.deploy_contract_by_owner(burrowland_wasm_bytes())
+    e.deploy_contract_by_owner(nearlend_wasm_bytes())
         .assert_success();
 
     let asset = e.get_asset(&tokens.wnear);
@@ -82,10 +82,10 @@ fn test_upgrade_by_owner() {
 
 #[test]
 fn test_degrade_fails() {
-    let (e, _tokens, _users) = basic_setup_with_contract(burrowland_0_4_0_wasm_bytes());
+    let (e, _tokens, _users) = basic_setup_with_contract(nearlend_0_4_0_wasm_bytes());
 
     assert!(!e
-        .deploy_contract_by_owner(burrowland_0_3_0_wasm_bytes())
+        .deploy_contract_by_owner(nearlend_0_3_0_wasm_bytes())
         .is_ok());
 
     let version: String = e
