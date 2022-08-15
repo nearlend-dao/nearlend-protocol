@@ -313,12 +313,13 @@ impl Contract {
         from_index: Option<u64>,
         limit: Option<u64>,
     ) -> Vec<NftPool> {
-        let nft_asset: Asset = self
+        let mut nft_asset: Asset = self
             .assets
             .get(&nft_contract_id)
             .expect("Can't get the NFT asset")
             .into();
 
+        nft_asset.nft_supplied.reverse();
         let values = nft_asset.nft_supplied;
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(values.len() as u64);
