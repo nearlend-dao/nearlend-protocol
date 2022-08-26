@@ -13,7 +13,8 @@ export WNEAR_TOKEN_ID=wrap.testnet
 export ONE_YOCTO=0.000000000000000000000001
 export GAS=200000000000000
 export DECIMAL_18=000000000000000000
-export ACCOUNT_TEST=nhtera.testnet
+export DECIMAL_24=00000000000000000000000
+export ACCOUNT_TEST=lamns3.testnet
 
 
 
@@ -41,7 +42,7 @@ near deploy $CONTRACT_ID --accountId $MAIN_ACCOUNT --wasmFile ../res/nearlend_pr
 echo "################### INIT CONTRACT ###################"
 near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
   "config" : {
-    "oracle_MAIN_ACCOUNT": "'$ORACLE_ID'", 
+    "oracle_account_id": "'$ORACLE_ID'", 
     "owner_id": "'$MAIN_ACCOUNT'", 
     "booster_token_id": "'$BOOSTER_TOKEN_ID'", 
     "booster_decimals": 18,
@@ -61,9 +62,9 @@ near call $CONTRACT_ID --accountId=$CONTRACT_ID new '{
 
 ######################### B3: Deposit storage #########################
 
-# Deposit BOOSTER_TOKEN_ID
+# # Deposit BOOSTER_TOKEN_ID
 near call $BOOSTER_TOKEN_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.00125
-near call $BOOSTER_TOKEN_ID --accountId=$MAIN_ACCOUNT storage_deposit '' --amount=0.00125
+near call $BOOSTER_TOKEN_ID --accountId=$ACCOUNT_TEST storage_deposit '' --amount=0.00125
 
 # Deposit CONTRACT_ID 
 # near call $CONTRACT_ID --accountId=$CONTRACT_ID storage_deposit '' --amount=0.1
@@ -114,10 +115,16 @@ near call $WETH_TOKEN_ID --accountId=$MAIN_ACCOUNT mint '{
  "amount": "10000000000000000000"
 }'
 
+Mint WETH_TOKEN_ID
+near call $WETH_TOKEN_ID --accountId=$MAIN_ACCOUNT mint '{
+ "account_id": "ltdatbeo.testnet",
+ "amount": "1000000000000000000000000"
+}'
+
 ## Mint DAI_TOKEN_ID
 near call $DAI_TOKEN_ID --accountId=$MAIN_ACCOUNT mint '{
-  "account_id": "'$MAIN_ACCOUNT'",
-  "amount": "100000000000000000000000"
+  "account_id": "ltdatbeo.testnet",
+  "amount": "1000000000000000000000000000"
 }'
 
 near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST mint '{
@@ -320,28 +327,28 @@ near call $CONTRACT_ID --accountId=$MAIN_ACCOUNT add_asset '{
   }
 }' --amount=$ONE_YOCTO --gas=$GAS
 
-########################## Add config for Reward Token ##########################
-# Add assets token NEL to contract
-near call $CONTRACT_ID --accountId=$MAIN_ACCOUNT add_asset '{
-  "token_id": "'$BOOSTER_TOKEN_ID'",
-   "asset_config": {
-    "reserve_ratio": 2500,
-    "target_utilization": 8000,
-    "target_utilization_rate": "1000000000001547125956667610",
-    "max_utilization_rate": "1000000000039724853136740579",
-    "volatility_ratio": 6000,
-    "extra_decimals": 0,
-    "can_deposit": true,
-    "can_withdraw": true,
-    "can_use_as_collateral": false,
-    "can_borrow": false
-  }
-}' --amount=$ONE_YOCTO --gas=$GAS
+# ########################## Add config for Reward Token ##########################
+# # Add assets token NEL to contract
+# near call $CONTRACT_ID --accountId=$MAIN_ACCOUNT add_asset '{
+#   "token_id": "'$BOOSTER_TOKEN_ID'",
+#    "asset_config": {
+#     "reserve_ratio": 2500,
+#     "target_utilization": 8000,
+#     "target_utilization_rate": "1000000000001547125956667610",
+#     "max_utilization_rate": "1000000000039724853136740579",
+#     "volatility_ratio": 6000,
+#     "extra_decimals": 0,
+#     "can_deposit": true,
+#     "can_withdraw": true,
+#     "can_use_as_collateral": false,
+#     "can_borrow": false
+#   }
+# }' --amount=$ONE_YOCTO --gas=$GAS
 
 # Deposit to reserved 500k NEL
-near call $BOOSTER_TOKEN_ID --accountId=$ACCOUNT_TEST ft_transfer_call '{
+near call $DAI_TOKEN_ID --accountId=$ACCOUNT_TEST ft_transfer_call '{
   "receiver_id": "'$CONTRACT_ID'",
-  "amount": "500000'$DECIMAL_18'",
+  "amount": "8000'$DECIMAL_18'",
   "msg": "\"DepositToReserve\""
 }' --amount=$ONE_YOCTO --gas=$GAS
 
@@ -351,16 +358,23 @@ near call $CONTRACT_ID --accountId=$MAIN_ACCOUNT add_asset_farm_reward '{
   "farm_id": {
     "Supplied": "'$DAI_TOKEN_ID'"
   },
-  "reward_token_id": "'$BOOSTER_TOKEN_ID'",
-  "reward_decimals": 18,
-  "new_reward_per_day": "100'$DECIMAL_18'",
-  "new_booster_log_base": "100'$DECIMAL_18'",
-  "reward_amount": "30000'$DECIMAL_18'"
+  "reward_token_id": "'$DAI_TOKEN_ID'",
+  "reward_decimals": 24,
+  "new_reward_per_day": "500'$DECIMAL_18'",
+  "new_booster_log_base": "500'$DECIMAL_18'",
+  "reward_amount": "2000'$DECIMAL_18'"
 }' --deposit=$ONE_YOCTO --gas=$GAS
 
 ###################### End B5: Add asset #####################
 
 
-near view $CONTRACT_ID get_num_accounts
-near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
-near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
+# near view $CONTRACT_ID get_num_accounts
+# near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
+# near view $CONTRACT_ID get_assets_paged_detailed '{"from_index": 0, "limit": 10}'
+
+# near view $CONTRACT_ID get_account '{"account_id": "gianglhfg.testnet"}' 
+# near view $CONTRACT_ID get_account '{"account_id": "lamns1.testnet"}' 
+# near view $CONTRACT_ID get_account '{"account_id": "ltdatbeo.testnet"}' 
+# near view $CONTRACT_ID get_assets_paged '{"from_index": 0, "limit": 10}'
+near view $CONTRACT_ID get_asset_farms_all '{}'
+

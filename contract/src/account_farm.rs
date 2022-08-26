@@ -167,7 +167,8 @@ impl Contract {
             }
         }
         for (token_id, &reward) in &all_rewards {
-            self.internal_deposit(account, &token_id, reward);
+            // deposit to pool
+            self.internal_ft_transfer(&account.account_id, &token_id, reward.clone());
         }
         let booster_balance = account
             .booster_staking
