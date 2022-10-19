@@ -41,6 +41,12 @@ pub struct AccountFarmReward {
     pub last_reward_per_share: BigDecimal,
 }
 
+impl Default for AccountFarm {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AccountFarm {
     pub fn new() -> Self {
         Self {
@@ -103,7 +109,7 @@ impl Contract {
                     last_reward_per_share,
                 }) = old_rewards.remove(token_id)
                 {
-                    let diff = reward_per_share.clone() - last_reward_per_share;
+                    let diff = *reward_per_share - last_reward_per_share;
                     let amount = diff.round_mul_u128(boosted_shares);
                     if amount > 0 {
                         new_rewards.push((token_id.clone(), amount));
@@ -116,7 +122,7 @@ impl Contract {
                     token_id.clone(),
                     AccountFarmReward {
                         boosted_shares,
-                        last_reward_per_share: reward_per_share.clone(),
+                        last_reward_per_share: *reward_per_share,
                     },
                 );
             }
@@ -168,7 +174,8 @@ impl Contract {
         }
         for (token_id, &reward) in &all_rewards {
             // deposit to pool
-            self.internal_ft_transfer(&account.account_id, &token_id, reward.clone());
+            self.internal_ft_transfer(&account.account_id, token_id, reward);
+            // self.internal_deposit(account, token_id, reward);
         }
         let booster_balance = account
             .booster_staking
@@ -221,6 +228,8 @@ impl Contract {
 #[near_bindgen]
 impl Contract {
     /// Claims all unclaimed farm rewards and starts farming new farms.
+    /// If the account_id is given, then it claims farms for the given account_id or uses
+    /// predecessor_account_id otherwise.
     pub fn account_farm_claim_all(&mut self, account_id: Option<AccountId>) {
         let account_id = account_id.unwrap_or_else(env::predecessor_account_id);
         let mut account = self.internal_unwrap_account(&account_id);

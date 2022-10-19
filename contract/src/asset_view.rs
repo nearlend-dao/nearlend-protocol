@@ -9,7 +9,7 @@ pub struct AssetDetailedView {
     pub supplied: Pool,
     /// Total borrowed.
     pub borrowed: Pool,
-    pub nft_supplied: Vec<NftPool> ,
+    pub nft_supplied: Vec<NftPool>,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
     /// borrowing rate.
     #[serde(with = "u128_dec_format")]

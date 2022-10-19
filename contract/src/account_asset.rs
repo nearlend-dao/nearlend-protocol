@@ -24,6 +24,12 @@ impl From<AccountAsset> for VAccountAsset {
     }
 }
 
+impl Default for AccountAsset {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AccountAsset {
     pub fn new() -> Self {
         Self { shares: 0.into() }

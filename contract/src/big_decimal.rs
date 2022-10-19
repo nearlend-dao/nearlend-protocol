@@ -53,7 +53,7 @@ impl std::fmt::Debug for BigDecimal {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-const PARSE_INT_ERROR: &'static str = "Parse int error";
+const PARSE_INT_ERROR: &str = "Parse int error";
 
 #[cfg(not(target_arch = "wasm32"))]
 impl FromStr for BigDecimal {
@@ -71,7 +71,7 @@ impl FromStr for BigDecimal {
         } else {
             (s, 0u128)
         };
-        let int = U384::from_str(&int).map_err(|_| PARSE_INT_ERROR)?;
+        let int = U384::from_str(int).map_err(|_| PARSE_INT_ERROR)?;
         if dec >= BIG_DIVISOR {
             return Err(String::from("The decimal part is too large"));
         }
@@ -97,7 +97,7 @@ impl<'de> Deserialize<'de> for BigDecimal {
         D: near_sdk::serde::Deserializer<'de>,
     {
         let s: String = Deserialize::deserialize(deserializer)?;
-        Ok(Self::from_str(&s).map_err(|err| near_sdk::serde::de::Error::custom(err))?)
+        Self::from_str(&s).map_err(near_sdk::serde::de::Error::custom)
     }
 }
 

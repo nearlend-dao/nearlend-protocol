@@ -10,6 +10,12 @@ pub struct NftPool {
     pub deposit_timestamp: Timestamp,
 }
 
+impl Default for NftPool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NftPool {
     pub fn new() -> Self {
         Self {

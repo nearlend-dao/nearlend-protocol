@@ -93,7 +93,7 @@ impl Account {
     pub fn internal_unwrap_borrowed(&mut self, token_id: &TokenId) -> Shares {
         *self
             .borrowed
-            .get(&token_id)
+            .get(token_id)
             .expect("Borrowed asset not found")
     }
 
@@ -119,7 +119,7 @@ impl Account {
 
     pub fn get_borrowed_shares(&self, token_id: &TokenId) -> Shares {
         self.borrowed
-            .get(&token_id)
+            .get(token_id)
             .cloned()
             .unwrap_or_else(|| 0.into())
     }

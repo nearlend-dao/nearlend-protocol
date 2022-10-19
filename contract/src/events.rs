@@ -36,9 +36,9 @@ pub mod emit {
         log_event(
             "deposit_to_reserve",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -47,9 +47,9 @@ pub mod emit {
         log_event(
             "deposit",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -58,9 +58,9 @@ pub mod emit {
         log_event(
             "withdraw_started",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -69,9 +69,9 @@ pub mod emit {
         log_event(
             "withdraw_failed",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -80,9 +80,9 @@ pub mod emit {
         log_event(
             "withdraw_succeeded",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -95,9 +95,9 @@ pub mod emit {
         log_event(
             "withdraw_nft_started",
             AccountNFTToken {
-                account_id: &account_id,
-                nft_contract_id: &nft_contract_id,
-                token_id: &token_id,
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
@@ -110,9 +110,9 @@ pub mod emit {
         log_event(
             "withdraw_nft_failed",
             AccountNFTToken {
-                account_id: &account_id,
-                nft_contract_id: &nft_contract_id,
-                token_id: &token_id,
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
@@ -125,9 +125,9 @@ pub mod emit {
         log_event(
             "withdraw_nft_succeeded",
             AccountNFTToken {
-                account_id: &account_id,
-                nft_contract_id: &nft_contract_id,
-                token_id: &token_id,
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
@@ -136,9 +136,9 @@ pub mod emit {
         log_event(
             "borrow",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -147,9 +147,9 @@ pub mod emit {
         log_event(
             "repay",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }

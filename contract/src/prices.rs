@@ -5,6 +5,12 @@ pub struct Prices {
     prices: HashMap<TokenId, Price>,
 }
 
+impl Default for Prices {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Prices {
     pub fn new() -> Self {
         Self {
