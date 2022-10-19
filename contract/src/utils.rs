@@ -44,6 +44,4 @@ pub(crate) fn u128_ratio(a: u128, num: u128, denom: u128) -> Balance {
 pub(crate) fn ratio(balance: Balance, r: u32) -> Balance {
     assert!(r <= MAX_RATIO);
     u128_ratio(balance, u128::from(r), u128::from(MAX_RATIO))
-
-    
 }
