@@ -261,7 +261,7 @@ fn test_has_potential_farms() {
 
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     e.add_farm(
-        farm_id.clone(),
+        farm_id,
         &e.booster_token,
         reward_per_day,
         d(100, 18),
@@ -289,7 +289,7 @@ fn test_farm_supplied_xbooster() {
 
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     e.add_farm(
-        farm_id.clone(),
+        farm_id,
         &tokens.nusdc,
         reward_per_day,
         booster_base,
@@ -419,7 +419,7 @@ fn test_farm_supplied_xbooster_unstake() {
 
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     e.add_farm(
-        farm_id.clone(),
+        farm_id,
         &tokens.nusdc,
         reward_per_day,
         booster_base,
@@ -534,7 +534,7 @@ fn test_farm_supplied_two_users() {
 
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     e.add_farm(
-        farm_id.clone(),
+        farm_id,
         &tokens.nusdc,
         reward_per_day,
         booster_base,

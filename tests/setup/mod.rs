@@ -151,7 +151,7 @@ impl Env {
         let contract = deploy!(
             contract: NearlendContract,
             contract_id: NEARLEND_ID.to_string(),
-            bytes: &contract_bytes,
+            bytes: contract_bytes,
             signer_account: near,
             deposit: to_yocto("20"),
             gas: DEFAULT_GAS.0,
@@ -491,7 +491,7 @@ impl Env {
         token: &UserAccount,
         amount: Balance,
     ) -> ExecutionResult {
-        self.contract_ft_transfer_call(&token, &user, amount, "")
+        self.contract_ft_transfer_call(token, user, amount, "")
     }
 
     pub fn oracle_call(
@@ -519,7 +519,7 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Borrow(asset_amount(token, amount))],
@@ -535,7 +535,7 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![
@@ -555,7 +555,7 @@ impl Env {
         out_assets: Vec<AssetAmount>,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Liquidate {
@@ -574,7 +574,7 @@ impl Env {
         price_data: PriceData,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::ForceClose {
@@ -672,7 +672,7 @@ pub fn init_token(e: &Env, token_account_id: &AccountId, decimals: u8) -> UserAc
                 icon: None,
                 reference: None,
                 reference_hash: None,
-                decimals: decimals,
+                decimals,
             }
         })
         .to_string()
