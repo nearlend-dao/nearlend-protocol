@@ -51,6 +51,54 @@ fn test_supply() {
     assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
 }
 
+
+/// Alice puts 100 NEAR and withdraw 20 NEAR, (NEAR at 10$).
+#[test]
+fn test_withdraw() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+
+    let withdraw_amount = d(20, 24);
+    e.withdraw(
+        &users.alice,
+        &tokens.wnear,
+        price_data(&tokens, Some(100000), None),
+        withdraw_amount,
+    )
+    .assert_success();
+
+    let asset = e.get_asset(&tokens.wnear);
+    assert_eq!(asset.supplied.balance, supply_amount - withdraw_amount);
+    assert_eq!(asset.supply_apr, BigDecimal::zero());
+    assert_eq!(asset.borrow_apr, BigDecimal::zero());
+
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.supplied[0].apr, BigDecimal::zero());
+}
+
+/// Alice puts 100 NEAR and withdraw 110 NEAR, It's will return fail from contract.
+#[test]
+fn test_withdraw_fail() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+
+    let withdraw_amount = d(110, 24);
+    let result = e.withdraw(
+        &users.alice,
+        &tokens.wnear,
+        price_data(&tokens, Some(100000), None),
+        withdraw_amount,
+    );
+
+    assert!(!result.is_ok());
+}
+
 #[test]
 fn test_borrow() {
     let (e, tokens, users) = basic_setup();
