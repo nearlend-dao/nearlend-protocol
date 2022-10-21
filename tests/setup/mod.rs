@@ -15,7 +15,7 @@ pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
     ContractContract as NearlendContract, PriceReceiverMsg, TokenReceiverMsg,
 };
-use contract::{AssetFarmView, AssetView, FarmId};
+use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
@@ -562,6 +562,27 @@ impl Env {
                     account_id: liquidation_user.account_id(),
                     in_assets,
                     out_assets,
+                }],
+            },
+        )
+    }
+
+    pub fn liquidate_nft(
+        &self,
+        user: &UserAccount,
+        liquidation_user: &UserAccount,
+        price_data: PriceData,
+        in_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::LiquidateNFT {
+                    account_id: liquidation_user.account_id(),
+                    in_assets,
+                    out_nft_assets,
                 }],
             },
         )
