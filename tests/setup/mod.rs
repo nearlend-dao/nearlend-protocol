@@ -21,9 +21,9 @@ use test_oracle::ContractContract as OracleContract;
 
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     NEARLEND_WASM_BYTES => "res/nearlend_protocol.wasm",
-    NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol.wasm",
-    NEARLEND_0_4_0_WASM_BYTES => "res/nearlend_protocol.wasm",
-    NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol_0.3.0.wasm",
+    NEARLEND_0_4_0_WASM_BYTES => "res/nearlend_protocol_0.4.0.wasm",
+    NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol_0.5.1.wasm",
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
 }
