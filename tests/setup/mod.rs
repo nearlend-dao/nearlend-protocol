@@ -494,6 +494,19 @@ impl Env {
         self.contract_ft_transfer_call(token, user, amount, "")
     }
 
+    pub fn deposit_and_repay(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        amount: Balance,
+    ) -> ExecutionResult {
+        let msg = serde_json::to_string(&TokenReceiverMsg::Execute {
+            actions: vec![Action::Repay(asset_amount(token, amount))],
+        })
+        .unwrap();
+        self.contract_ft_transfer_call(token, user, amount, &msg)
+    }
+
     pub fn oracle_call(
         &self,
         user: &UserAccount,
