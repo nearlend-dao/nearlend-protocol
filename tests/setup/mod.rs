@@ -8,7 +8,7 @@ use near_sdk::serde_json::json;
 use near_sdk::{env, serde_json, AccountId, Balance, Gas, Timestamp};
 use near_sdk_sim::runtime::GenesisConfig;
 use near_sdk_sim::{
-    deploy, init_simulator, to_yocto, ContractAccount, ExecutionResult, UserAccount,
+    deploy, init_simulator, to_yocto, ContractAccount, ExecutionResult, UserAccount, STORAGE_AMOUNT,
 };
 
 pub use contract::{
@@ -19,6 +19,8 @@ use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
+use near_contract_standards::non_fungible_token::metadata::TokenMetadata;
+
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     NEARLEND_WASM_BYTES => "res/nearlend_protocol.wasm",
     NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol_0.3.0.wasm",
@@ -26,6 +28,7 @@ near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
     NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol_0.5.1.wasm",
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
+    NON_FUNGIBLE_TOKEN_WASM_BYTES => "res/nft.wasm",
 }
 
 pub fn nearlend_0_3_0_wasm_bytes() -> &'static [u8] {
@@ -49,6 +52,7 @@ pub const ORACLE_ID: &str = "oracle.near";
 pub const NEARLEND_ID: &str = "nearlend.near";
 pub const BOOSTER_TOKEN_ID: &str = "token.nearlend.near";
 pub const OWNER_ID: &str = "owner.near";
+pub const NFT_ID: &str = "nft-nearlend.near";
 
 // pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
 pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 100);
@@ -65,6 +69,8 @@ pub const ONE_DAY_SEC: DurationSec = 24 * 60 * 60;
 pub const MIN_DURATION_SEC: DurationSec = 2678400;
 pub const MAX_DURATION_SEC: DurationSec = 31536000;
 
+pub const MINT_STORAGE_COST: u128 = 11280000000000000000000;
+
 pub struct Env {
     pub root: UserAccount,
     pub near: UserAccount,
@@ -72,6 +78,7 @@ pub struct Env {
     pub oracle: ContractAccount<OracleContract>,
     pub contract: ContractAccount<NearlendContract>,
     pub booster_token: UserAccount,
+    pub nft_contract: UserAccount,
 }
 
 #[derive(Debug)]
@@ -91,6 +98,10 @@ pub struct Users {
     pub dude: UserAccount,
     pub eve: UserAccount,
 }
+
+pub type NFTContractId = AccountId;
+pub type NFTTokenId = String;
+pub type NFTContractTokenId = String;
 
 pub fn storage_deposit(
     user: &UserAccount,
@@ -197,6 +208,22 @@ impl Env {
 
         ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
 
+        let nft_account_id = AccountId::new_unchecked(NFT_ID.to_string());
+        let nft_contract = near.deploy(&NON_FUNGIBLE_TOKEN_WASM_BYTES, nft_account_id.clone(), STORAGE_AMOUNT);
+        nft_contract.call(
+            nft_account_id,
+            "new_default_meta",
+            &json!({
+                "owner_id": owner.account_id(),
+
+
+            })
+            .to_string()
+            .into_bytes(),
+            DEFAULT_GAS.0,
+            0,
+        );
+
         Self {
             root,
             near,
@@ -204,6 +231,7 @@ impl Env {
             contract,
             oracle,
             booster_token,
+            nft_contract,
         }
     }
 
@@ -364,6 +392,28 @@ impl Env {
                 ONE_YOCTO,
             )
             .assert_success();
+
+            self.owner
+            .function_call(
+                self.contract.contract.add_asset(
+                    self.nft_contract.account_id(),
+                    AssetConfig {
+                        reserve_ratio: 2500,
+                        target_utilization: 8000,
+                        target_utilization_rate: U128(0),
+                        max_utilization_rate: U128(0),
+                        volatility_ratio: 3000,
+                        extra_decimals: 0,
+                        can_deposit: true,
+                        can_withdraw: true,
+                        can_use_as_collateral: true,
+                        can_borrow: false,
+                    },
+                ),
+                DEFAULT_GAS.0,
+                ONE_YOCTO,
+            )
+            .assert_success();
     }
 
     pub fn deposit_reserves(&self, tokens: &Tokens) {
@@ -407,6 +457,30 @@ impl Env {
         )
     }
 
+    pub fn contract_nft_transfer_call(
+        &self,
+        user: &UserAccount,
+        nft_contract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+        msg: &str,
+    ) -> ExecutionResult {
+        user.call(
+            nft_contract_id,
+            "nft_transfer_call",
+            &json!({
+                "token_id": nft_token_id,
+                "receiver_id": self.contract.user_account.account_id(),
+                "approval_id": 0,
+                "memo": "memo",
+                "msg": msg,
+            })
+            .to_string()
+            .into_bytes(),
+            DEFAULT_GAS.0,
+            1,
+        )
+    }
+
     pub fn mint_ft(&self, token: &UserAccount, receiver: &UserAccount, amount: Balance) {
         self.owner
             .call(
@@ -422,6 +496,43 @@ impl Env {
                 1,
             )
             .assert_success();
+    }
+
+    fn sample_token_metadata(&self) -> TokenMetadata {
+        TokenMetadata {
+            title: Some("Olympus Mons".into()),
+            description: Some("The tallest mountain in the charted solar system".into()),
+            media: None,
+            media_hash: None,
+            copies: Some(1u64),
+            issued_at: None,
+            expires_at: None,
+            starts_at: None,
+            updated_at: None,
+            extra: None,
+            reference: None,
+            reference_hash: None,
+        }
+    }
+
+    pub fn mint_nft(&self, receiver: &UserAccount, token_id: NFTTokenId) {
+        self.owner
+            .call(
+                self.nft_contract.account_id.clone(),
+                "nft_mint",
+                &json!({
+                    "token_id": token_id,
+                    "token_owner_id": receiver.account_id(),
+                    "receiver_id": receiver.account_id(),
+                    "token_metadata": self.sample_token_metadata(),
+                })
+                .to_string()
+                .into_bytes(),
+                DEFAULT_GAS.0,
+                MINT_STORAGE_COST,
+            )
+            .assert_success();
+        
     }
 
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
@@ -494,6 +605,15 @@ impl Env {
         self.contract_ft_transfer_call(token, user, amount, "")
     }
 
+    pub fn supply_nft_to_collateral(
+        &self,
+        user: &UserAccount,
+        nft_contract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.contract_nft_transfer_call(user, nft_contract_id.clone(), nft_token_id.clone(), "")
+    }
+
     pub fn deposit_and_repay(
         &self,
         user: &UserAccount,
@@ -552,6 +672,25 @@ impl Env {
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Withdraw(asset_amount(token, amount))],
+            },
+        )
+    }
+
+    pub fn withdraw_nft(
+        &self,
+        user: &UserAccount,
+        price_data: PriceData,
+        nft_conntract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::WithdrawNFT(nft_asset(
+                    nft_conntract_id,
+                    nft_token_id,
+                ))],
             },
         )
     }
@@ -770,6 +909,7 @@ pub fn price_data(
     tokens: &Tokens,
     wnear_mul: Option<Balance>,
     neth_mul: Option<Balance>,
+    nft_mul: Option<Balance>,
 ) -> PriceData {
     let mut prices = vec![
         AssetOptionalPrice {
@@ -812,6 +952,16 @@ pub fn price_data(
             }),
         })
     }
+    if let Some(nft_mul) = nft_mul {
+        prices.push(AssetOptionalPrice {
+            asset_id: NFT_ID.to_string(),
+            price: Some(Price {
+                multiplier: nft_mul,
+                decimals: 28,
+            }),
+        })
+    }
+
     PriceData {
         timestamp: tokens.wnear.borrow_runtime().cur_block.block_timestamp,
         recency_duration_sec: 90,
@@ -864,6 +1014,13 @@ pub fn asset_amount(token: &UserAccount, amount: Balance) -> AssetAmount {
         token_id: token.account_id(),
         amount: Some(amount.into()),
         max_amount: None,
+    }
+}
+
+pub fn nft_asset(nft_contract_id: NFTContractId, token_id: NFTTokenId) -> NFTAsset {
+    NFTAsset {
+        nft_contract_id,
+        token_id,
     }
 }
 

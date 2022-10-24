@@ -65,7 +65,7 @@ fn test_withdraw() {
     e.withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         withdraw_amount,
     )
     .assert_success();
@@ -92,7 +92,7 @@ fn test_withdraw_fail() {
     let result = e.withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         withdraw_amount,
     );
 
@@ -111,7 +111,7 @@ fn test_borrow() {
     e.borrow(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
@@ -143,7 +143,7 @@ fn test_borrow_and_withdraw() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
@@ -171,18 +171,14 @@ fn test_repay() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
 
     let repay_amount = d(8000, 18);
-    e.deposit_and_repay(
-        &users.alice,
-        &tokens.ndai,
-        repay_amount,
-    )
-    .assert_success();
+    e.deposit_and_repay(&users.alice, &tokens.ndai, repay_amount)
+        .assert_success();
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.borrowed.len(), 0);
@@ -200,7 +196,7 @@ fn test_interest() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();

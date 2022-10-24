@@ -25,7 +25,7 @@ fn test_liquidation_alice_by_bob() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
@@ -58,7 +58,7 @@ fn test_liquidation_alice_by_bob() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![asset_amount(&tokens.wnear, wnear_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
     );
@@ -116,7 +116,7 @@ fn test_liquidation_decrease_health_factor() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         wnear_borrow_amount,
     )
     .assert_success();
@@ -125,7 +125,7 @@ fn test_liquidation_decrease_health_factor() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.nusdt,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         usdt_borrow_amount,
     )
     .assert_success();
@@ -175,7 +175,7 @@ fn test_liquidation_decrease_health_factor() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![asset_amount(&tokens.nusdt, usdt_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
     );
@@ -192,7 +192,7 @@ fn test_liquidation_decrease_health_factor() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![
             asset_amount(&tokens.wnear, wnear_amount_in),
             asset_amount(&tokens.nusdt, usdt_amount_in),
@@ -283,7 +283,7 @@ fn test_force_close() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
@@ -298,7 +298,7 @@ fn test_force_close() {
     let res = e.force_close(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
     );
     let err = match res.status() {
         ExecutionStatus::Failure(e) => e.to_string(),
@@ -310,7 +310,7 @@ fn test_force_close() {
     let res = e.force_close(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(250000), None),
+        price_data(&tokens, Some(250000), None, None),
     );
     res.assert_success();
     let logs = get_logs(&e.near.borrow_runtime());
