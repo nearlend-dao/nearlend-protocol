@@ -208,15 +208,20 @@ impl Env {
 
         ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
 
+        // Deploy NFT contract
         let nft_account_id = AccountId::new_unchecked(NFT_ID.to_string());
-        let nft_contract = near.deploy(&NON_FUNGIBLE_TOKEN_WASM_BYTES, nft_account_id.clone(), STORAGE_AMOUNT);
+        let nft_contract = near.deploy(
+            &NON_FUNGIBLE_TOKEN_WASM_BYTES,
+            nft_account_id.clone(),
+            STORAGE_AMOUNT,
+        );
+
+        // Init NFT contract
         nft_contract.call(
             nft_account_id,
             "new_default_meta",
             &json!({
                 "owner_id": owner.account_id(),
-
-
             })
             .to_string()
             .into_bytes(),
@@ -393,7 +398,7 @@ impl Env {
             )
             .assert_success();
 
-            self.owner
+        self.owner
             .function_call(
                 self.contract.contract.add_asset(
                     self.nft_contract.account_id(),
@@ -476,7 +481,7 @@ impl Env {
             })
             .to_string()
             .into_bytes(),
-            DEFAULT_GAS.0,
+            MAX_GAS.0,
             1,
         )
     }
@@ -532,7 +537,7 @@ impl Env {
                 MINT_STORAGE_COST,
             )
             .assert_success();
-        
+            
     }
 
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {

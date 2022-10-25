@@ -28,7 +28,7 @@ fn test_withdraw_nft_fail() {
     e.mint_nft(&users.alice, "1".to_string());
     e.mint_nft(&users.alice, "2".to_string());
 
-    e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "3".to_string())
+    e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string())
         .assert_success();
 
     let result = e.withdraw_nft(
