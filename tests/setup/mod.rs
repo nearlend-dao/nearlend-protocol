@@ -719,6 +719,31 @@ impl Env {
         )
     }
 
+    pub fn borrow_and_withdraw_nft(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        price_data: PriceData,
+        amount: Balance,
+        nft_conntract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![
+                    Action::Borrow(asset_amount(token, amount)),
+                    Action::Withdraw(asset_amount(token, amount)),
+                    Action::WithdrawNFT(nft_asset(
+                        nft_conntract_id,
+                        nft_token_id,
+                    )),
+                ],
+            },
+        )
+    }
+
     pub fn liquidate(
         &self,
         user: &UserAccount,
