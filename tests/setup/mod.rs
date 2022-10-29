@@ -265,6 +265,16 @@ impl Env {
             .submit()
     }
 
+    pub fn update_asset(&self, token_id: AccountId, asset_config: AssetConfig) {
+        self.owner
+            .function_call(
+                self.contract.contract.update_asset(token_id, asset_config),
+                DEFAULT_GAS.0,
+                ONE_YOCTO,
+            )
+            .assert_success()
+    }
+
     pub fn setup_assets(&self, tokens: &Tokens) {
         self.owner
             .function_call(
@@ -537,7 +547,6 @@ impl Env {
                 MINT_STORAGE_COST,
             )
             .assert_success();
-            
     }
 
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
@@ -735,10 +744,7 @@ impl Env {
                 actions: vec![
                     Action::Borrow(asset_amount(token, amount)),
                     Action::Withdraw(asset_amount(token, amount)),
-                    Action::WithdrawNFT(nft_asset(
-                        nft_conntract_id,
-                        nft_token_id,
-                    )),
+                    Action::WithdrawNFT(nft_asset(nft_conntract_id, nft_token_id)),
                 ],
             },
         )
@@ -1065,10 +1071,11 @@ pub fn get_logs(runtime: &RuntimeStandalone) -> Vec<String> {
 }
 
 pub fn find_asset<'a>(assets: &'a [AssetView], token_id: &AccountId) -> &'a AssetView {
+    let msg = format!("Missing asset: {:?}", token_id);
     assets
         .iter()
         .find(|e| &e.token_id == token_id)
-        .expect("Missing asset")
+        .expect(msg.as_str())
 }
 
 pub fn assert_balances(actual: &[AssetView], expected: &[AssetView]) {
