@@ -186,6 +186,23 @@ pub mod emit {
         );
     }
 
+    pub fn force_close_nft(
+        account_id: &AccountId,
+        liquidation_account_id: &AccountId,
+        collateral_sum: &BigDecimal,
+        repaid_sum: &BigDecimal,
+    ) {
+        log_event(
+            "force_close_nft",
+            json!({
+                "account_id": account_id,
+                "liquidation_account_id": liquidation_account_id,
+                "collateral_sum": collateral_sum,
+                "repaid_sum": repaid_sum,
+            }),
+        );
+    }
+
     pub fn booster_stake(
         account_id: &AccountId,
         amount: Balance,
