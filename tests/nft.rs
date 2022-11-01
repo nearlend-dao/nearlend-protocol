@@ -1,9 +1,44 @@
 mod setup;
 
-use contract::BigDecimal;
-use near_sdk_sim::transaction::ExecutionStatus;
-use near_sdk::json_types::U128;
 use crate::setup::*;
+use contract::BigDecimal;
+use near_sdk::json_types::U128;
+use near_sdk_sim::transaction::ExecutionStatus;
+
+#[test]
+fn test_deposit_nft() {
+    let (e, _, users) = basic_setup();
+
+    e.mint_nft(&users.alice, "1".to_string());
+    e.mint_nft(&users.alice, "2".to_string());
+
+    e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string())
+        .assert_success();
+
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+}
+
+#[test]
+fn test_deposit_nft_fail() {
+    let (e, _, users) = basic_setup();
+
+    e.mint_nft(&users.alice, "1".to_string());
+    e.mint_nft(&users.bob, "2".to_string());
+
+    let res =
+        e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string());
+
+    let err = match res.status() {
+        ExecutionStatus::Failure(e) => e.to_string(),
+        _ => panic!("Should fail with error"),
+    };
+    assert!(err.contains("Sender must be the token owner"));
+}
 
 #[test]
 fn test_withdraw_nft() {
@@ -34,14 +69,71 @@ fn test_withdraw_nft_fail() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string())
         .assert_success();
 
-    let result = e.withdraw_nft(
+    let res = e.withdraw_nft(
         &users.alice,
         price_data(&tokens, None, None, Some(100000)),
         e.nft_contract.account_id(),
         "1".to_string(),
     );
 
-    assert!(!result.is_ok())
+    let err = match res.status() {
+        ExecutionStatus::Failure(e) => e.to_string(),
+        _ => panic!("Should fail with error"),
+    };
+    assert!(err.contains("NFT not found in the NFT pool"));
+}
+
+#[test]
+fn test_withdraw_nft_fail_health_factor() {
+    let (e, tokens, users) = basic_setup();
+
+    // Supply 10 Near at $10
+    let supply_amount = d(10, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+
+    // Supply 1 NFT ($30)
+    e.mint_nft(&users.alice, "1".to_string());
+    e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
+        .assert_success();
+
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
+
+    // Borrowe 60 DAI
+    let borrow_amount = d(60, 18);
+    let res = e.borrow_and_withdraw(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, Some(100000), None, Some(300000)),
+        borrow_amount,
+    );
+    res.assert_success();
+    // println!("{:#?}", res.logs());
+
+    let result = e.withdraw_nft(
+        &users.alice,
+        price_data(&tokens, Some(100000), None, Some(300000)),
+        e.nft_contract.account_id(),
+        "1".to_string(),
+    );
+
+    let err = match result.status() {
+        ExecutionStatus::Failure(e) => e.to_string(),
+        _ => panic!("Should fail with health error"),
+    };
+    assert!(err.contains("self.compute_max_discount(account, &prices) == BigDecimal::zero()"));
+
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
 }
 
 #[test]
@@ -220,9 +312,7 @@ fn test_liquidation_nft_alice_by_bob() {
     let account = e.get_account(&users.bob);
     assert_balances(
         &account.supplied,
-        &[
-            av(tokens.wnear.account_id(), bobs_amount - wnear_amount_in),
-        ],
+        &[av(tokens.wnear.account_id(), bobs_amount - wnear_amount_in)],
     );
     assert!(find_asset(&account.supplied, &tokens.wnear.account_id()).apr > BigDecimal::zero());
     assert_eq!(
@@ -232,7 +322,6 @@ fn test_liquidation_nft_alice_by_bob() {
     assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
 }
 
-
 /// Alice puts 1000 USDC and 1 NFT ($30) and borrows 50 NEAR at 10$, 50 USDT. Prices go up. REKT
 /// Bob liquidates Alice but doesn't meet requirement.
 #[test]
@@ -240,32 +329,38 @@ fn test_liquidation_nft_decrease_health_factor() {
     let (e, tokens, users) = basic_setup();
 
     // Change asset config Near volatility_ratio = 95%
-    e.update_asset(tokens.wnear.account_id(),  AssetConfig {
-        reserve_ratio: 2500,
-        target_utilization: 8000,
-        target_utilization_rate: U128(1000000000003593629036885046),
-        max_utilization_rate: U128(1000000000039724853136740579),
-        volatility_ratio: 9500, // Change to 95%
-        extra_decimals: 0,
-        can_deposit: true,
-        can_withdraw: true,
-        can_use_as_collateral: true,
-        can_borrow: true,
-    });
+    e.update_asset(
+        tokens.wnear.account_id(),
+        AssetConfig {
+            reserve_ratio: 2500,
+            target_utilization: 8000,
+            target_utilization_rate: U128(1000000000003593629036885046),
+            max_utilization_rate: U128(1000000000039724853136740579),
+            volatility_ratio: 9500, // Change to 95%
+            extra_decimals: 0,
+            can_deposit: true,
+            can_withdraw: true,
+            can_use_as_collateral: true,
+            can_borrow: true,
+        },
+    );
 
     // Change asset config NFT volatility_ratio = 95%
-    e.update_asset(e.nft_contract.account_id(),  AssetConfig {
-        reserve_ratio: 2500,
-        target_utilization: 8000,
-        target_utilization_rate: U128(0),
-        max_utilization_rate: U128(0),
-        volatility_ratio: 9500, // Change to 95%
-        extra_decimals: 0,
-        can_deposit: true,
-        can_withdraw: true,
-        can_use_as_collateral: true,
-        can_borrow: false,
-    });
+    e.update_asset(
+        e.nft_contract.account_id(),
+        AssetConfig {
+            reserve_ratio: 2500,
+            target_utilization: 8000,
+            target_utilization_rate: U128(0),
+            max_utilization_rate: U128(0),
+            volatility_ratio: 9500, // Change to 95%
+            extra_decimals: 0,
+            can_deposit: true,
+            can_withdraw: true,
+            can_use_as_collateral: true,
+            can_borrow: false,
+        },
+    );
 
     let extra_decimals_mult = d(1, 12);
 
@@ -371,10 +466,10 @@ fn test_liquidation_nft_decrease_health_factor() {
     assert_eq!(account.nft_supplied.len(), 1);
     assert_balances(
         &account.borrowed,
-        &[av(
-            tokens.wnear.account_id(),
-            wnear_borrow_amount,
-        ), av(tokens.nusdt.account_id(), usdt_borrow_amount),],
+        &[
+            av(tokens.wnear.account_id(), wnear_borrow_amount),
+            av(tokens.nusdt.account_id(), usdt_borrow_amount),
+        ],
     );
     assert!(find_asset(&account.borrowed, &tokens.wnear.account_id()).apr > BigDecimal::zero());
 
@@ -383,10 +478,7 @@ fn test_liquidation_nft_decrease_health_factor() {
     assert_balances(
         &account.supplied,
         &[
-            av(
-                tokens.wnear.account_id(),
-                wnear_bobs_amount,
-            ),
+            av(tokens.wnear.account_id(), wnear_bobs_amount),
             av(tokens.nusdt.account_id(), usdt_bobs_amount),
         ],
     );
