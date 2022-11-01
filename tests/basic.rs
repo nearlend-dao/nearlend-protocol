@@ -52,6 +52,25 @@ fn test_supply() {
 }
 
 #[test]
+fn test_deposit() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);   
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+        
+    let asset = e.get_asset(&tokens.wnear);
+    assert_eq!(asset.supplied.balance,supply_amount.clone());
+
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+    .assert_success();
+    
+    let asset1 = e.get_asset(&tokens.wnear);
+    assert!(asset1.supplied.balance > supply_amount);
+
+}
+
+#[test]
 fn test_borrow() {
     let (e, tokens, users) = basic_setup();
 
