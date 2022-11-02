@@ -7,21 +7,21 @@ use contract::FarmId;
 fn test_farm_supplied() {
     let (e, tokens, users) = basic_setup();
 
-    println!("{:?}", e.booster_token);
+    println!("{:?}", e.booster_contract.user_account);
     println!("{:?}", tokens);
     println!("{:?}", users);
 
-    let reward_per_day = d(100, 18);
-    let total_reward = d(3000, 18);
+    let reward_per_day = d(100, BOOSTER_TOKEN_DECIMALS);
+    let total_reward = d(3000, BOOSTER_TOKEN_DECIMALS);
 
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     println!("==========> Farm Id: {:?}", farm_id);
     // add farm reward
     e.add_farm(
         farm_id.clone(),
-        &e.booster_token,
+        &e.booster_contract.user_account,
         reward_per_day,
-        d(100, 18),
+        d(100, BOOSTER_TOKEN_DECIMALS),
         total_reward,
     );
 
@@ -31,7 +31,7 @@ fn test_farm_supplied() {
     assert_eq!(asset.farms[0].farm_id, farm_id);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(booster_reward.remaining_rewards, total_reward);
@@ -42,7 +42,7 @@ fn test_farm_supplied() {
     e.contract_ft_transfer_call(&tokens.ndai, &users.alice, amount, "")
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
@@ -51,7 +51,7 @@ fn test_farm_supplied() {
     assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(booster_reward.remaining_rewards, total_reward);
@@ -63,7 +63,7 @@ fn test_farm_supplied() {
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
         account.farms[0].rewards[0].reward_token_id,
-        e.booster_token.account_id()
+        e.booster_contract.user_account.account_id()
     );
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
@@ -78,14 +78,16 @@ fn test_farm_supplied() {
 
     let farmed_amount = reward_per_day * 3;
 
-    let asset = e.get_asset(&e.booster_token);
+    println!("===> farmed_amount: {:?}", farmed_amount);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
     assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(
@@ -110,16 +112,20 @@ fn test_farm_supplied() {
     // claim the reward
     e.account_farm_claim_all(&users.alice).assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     println!("{:?}", asset);
     // assert_eq!(asset.supplied.balance, farmed_amount);
     assert_eq!(asset.supplied.balance, 0);
+    println!(
+        "===> Account NEL token after claim: {:?}",
+        &e.nel_balance_of(&users.alice)
+    );
 
     let asset = e.get_asset(&tokens.ndai);
     assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(
@@ -132,7 +138,7 @@ fn test_farm_supplied() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(e.booster_token.account_id(), farmed_amount),
+            // av(e.booster_contract.user_account.account_id(), farmed_amount),
         ],
     );
 
@@ -150,7 +156,7 @@ fn test_farm_supplied() {
     // next 2 days, the farm should get rewards
     e.skip_time(ONE_DAY_SEC * 2);
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     // assert_eq!(asset.supplied.balance, farmed_amount);
     assert_eq!(asset.supplied.balance, 0);
 
@@ -158,7 +164,7 @@ fn test_farm_supplied() {
     assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(
@@ -171,7 +177,7 @@ fn test_farm_supplied() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(e.booster_token.account_id(), farmed_amount),
+            // av(e.booster_contract.user_account.account_id(), farmed_amount),
         ],
     );
 
@@ -194,7 +200,7 @@ fn test_farm_supplied() {
     assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .cloned()
         .unwrap();
     assert_eq!(booster_reward.remaining_rewards, 0);
@@ -204,7 +210,7 @@ fn test_farm_supplied() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(e.booster_token.account_id(), farmed_amount),
+            // av(e.booster_contract.user_account.account_id(), farmed_amount),
         ],
     );
 
@@ -223,7 +229,7 @@ fn test_farm_supplied() {
     // Claim all rewards
     e.account_farm_claim_all(&users.alice).assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     // assert_eq!(asset.supplied.balance, total_reward);
     assert_eq!(asset.supplied.balance, 0);
 
@@ -231,7 +237,7 @@ fn test_farm_supplied() {
     assert_eq!(asset.supplied.balance, amount);
     assert!(asset.farms[0]
         .rewards
-        .get(&e.booster_token.account_id())
+        .get(&e.booster_contract.user_account.account_id())
         .is_none());
 
     let account = e.get_account(&users.alice);
@@ -240,7 +246,7 @@ fn test_farm_supplied() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(e.booster_token.account_id(), total_reward),
+            // av(e.booster_contract.user_account.account_id(), total_reward),
         ],
     );
 
@@ -265,7 +271,7 @@ fn test_has_potential_farms() {
     let farm_id = FarmId::Supplied(tokens.ndai.account_id());
     e.add_farm(
         farm_id,
-        &e.booster_token,
+        &e.booster_contract.user_account,
         reward_per_day,
         d(100, 18),
         total_reward,
@@ -300,8 +306,13 @@ fn test_farm_supplied_xbooster() {
     );
 
     let booster_amount = d(5, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.alice,
+        booster_amount,
+        "",
+    )
+    .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
         .assert_success();
@@ -358,8 +369,13 @@ fn test_farm_supplied_xbooster() {
     assert_eq!(account.farms[0].rewards[0].unclaimed_amount, farmed_amount);
 
     let booster_amount = d(95, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.alice,
+        booster_amount,
+        "",
+    )
+    .assert_success();
 
     // Increasing booster stake updates all farms.
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
@@ -409,8 +425,13 @@ fn test_farm_supplied_xbooster_unstake() {
     let (e, tokens, users) = basic_setup();
 
     let booster_amount = d(5, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.alice,
+        booster_amount,
+        "",
+    )
+    .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
         .assert_success();
@@ -501,7 +522,7 @@ fn test_farm_supplied_xbooster_unstake() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            av(e.booster_token.account_id(), booster_amount),
+            av(e.booster_contract.user_account.account_id(), booster_amount),
             // av(tokens.nusdc.account_id(), farmed_amount),
         ],
     );
@@ -520,15 +541,25 @@ fn test_farm_supplied_two_users() {
     let (e, tokens, users) = basic_setup();
 
     let booster_amount_alice = d(5, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount_alice, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.alice,
+        booster_amount_alice,
+        "",
+    )
+    .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount_alice, MAX_DURATION_SEC)
         .assert_success();
 
     let booster_amount_bob = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.bob, booster_amount_bob, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.bob,
+        booster_amount_bob,
+        "",
+    )
+    .assert_success();
 
     e.account_stake_booster(&users.bob, booster_amount_bob, MAX_DURATION_SEC)
         .assert_success();
@@ -619,8 +650,13 @@ fn test_farm_supplied_two_users() {
     );
 
     let extra_booster_amount = d(95, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, extra_booster_amount, "")
-        .assert_success();
+    e.contract_ft_transfer_call(
+        &e.booster_contract.user_account,
+        &users.alice,
+        extra_booster_amount,
+        "",
+    )
+    .assert_success();
 
     // Increasing booster stake updates all farms.
     e.account_stake_booster(&users.alice, extra_booster_amount, MAX_DURATION_SEC)

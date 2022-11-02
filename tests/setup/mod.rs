@@ -17,6 +17,7 @@ pub use contract::{
 };
 use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
+use test_fungible_token::ContractContract as FungibleTokenContract;
 use test_oracle::ContractContract as OracleContract;
 
 use near_contract_standards::non_fungible_token::metadata::TokenMetadata;
@@ -50,14 +51,14 @@ pub fn nearlend_wasm_bytes() -> &'static [u8] {
 pub const NEAR: &str = "near";
 pub const ORACLE_ID: &str = "oracle.near";
 pub const NEARLEND_ID: &str = "nearlend.near";
-pub const BOOSTER_TOKEN_ID: &str = "token.nearlend.near";
+pub const BOOSTER_TOKEN_ID: &str = "ft-nearlend.near";
 pub const OWNER_ID: &str = "owner.near";
 pub const NFT_ID: &str = "nft-nearlend.near";
 
 // pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
 pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 100);
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
-pub const BOOSTER_TOKEN_DECIMALS: u8 = 18;
+pub const BOOSTER_TOKEN_DECIMALS: u8 = 24;
 pub const BOOSTER_TOKEN_TOTAL_SUPPLY: Balance =
     1_000_000_000 * 10u128.pow(BOOSTER_TOKEN_DECIMALS as _);
 
@@ -77,7 +78,7 @@ pub struct Env {
     pub owner: UserAccount,
     pub oracle: ContractAccount<OracleContract>,
     pub contract: ContractAccount<NearlendContract>,
-    pub booster_token: UserAccount,
+    pub booster_contract: ContractAccount<FungibleTokenContract>,
     pub nft_contract: UserAccount,
 }
 
@@ -183,28 +184,38 @@ impl Env {
             )
         );
 
-        let booster_token = contract.user_account.deploy_and_init(
-            &FUNGIBLE_TOKEN_WASM_BYTES,
-            a(BOOSTER_TOKEN_ID),
-            "new",
-            &json!({
-                "owner_id": owner.account_id(),
-                "total_supply": U128::from(BOOSTER_TOKEN_TOTAL_SUPPLY),
-                "metadata": FungibleTokenMetadata {
-                    spec: FT_METADATA_SPEC.to_string(),
-                    name: "Booster Token".to_string(),
-                    symbol: "BOOSTER".to_string(),
-                    icon: None,
-                    reference: None,
-                    reference_hash: None,
-                    decimals: BOOSTER_TOKEN_DECIMALS,
-                }
-            })
-            .to_string()
-            .into_bytes(),
-            to_yocto("10"),
-            DEFAULT_GAS.0,
+        let booster_contract = deploy!(
+            contract: FungibleTokenContract,
+            contract_id: BOOSTER_TOKEN_ID.to_string(),
+            bytes: &FUNGIBLE_TOKEN_WASM_BYTES,
+            signer_account: near,
+            deposit: to_yocto("20"),
+            gas: DEFAULT_GAS.0,
+            init_method: new_default_meta(owner.account_id(), U128::from(BOOSTER_TOKEN_TOTAL_SUPPLY))
         );
+
+        // let booster_contract = contract.user_account.deploy_and_init(
+        //     &FUNGIBLE_TOKEN_WASM_BYTES,
+        //     a(BOOSTER_TOKEN_ID),
+        //     "new",
+        //     &json!({
+        //         "owner_id": owner.account_id(),
+        //         "total_supply": U128::from(BOOSTER_TOKEN_TOTAL_SUPPLY),
+        //         "metadata": FungibleTokenMetadata {
+        //             spec: FT_METADATA_SPEC.to_string(),
+        //             name: "Booster Token".to_string(),
+        //             symbol: "BOOSTER".to_string(),
+        //             icon: None,
+        //             reference: None,
+        //             reference_hash: None,
+        //             decimals: BOOSTER_TOKEN_DECIMALS,
+        //         }
+        //     })
+        //     .to_string()
+        //     .into_bytes(),
+        //     to_yocto("10"),
+        //     DEFAULT_GAS.0,
+        // );
 
         ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
 
@@ -235,7 +246,7 @@ impl Env {
             owner,
             contract,
             oracle,
-            booster_token,
+            booster_contract,
             nft_contract,
         }
     }
@@ -279,7 +290,7 @@ impl Env {
         self.owner
             .function_call(
                 self.contract.contract.add_asset(
-                    self.booster_token.account_id(),
+                    self.booster_contract.account_id(),
                     AssetConfig {
                         reserve_ratio: 2500,
                         target_utilization: 8000,
@@ -443,9 +454,9 @@ impl Env {
         self.contract_ft_transfer_call(&tokens.nusdt, &self.owner, d(10000, 6), DEPOSIT_TO_RESERVE);
         self.contract_ft_transfer_call(&tokens.nusdc, &self.owner, d(10000, 6), DEPOSIT_TO_RESERVE);
         self.contract_ft_transfer_call(
-            &self.booster_token,
+            &self.booster_contract.user_account,
             &self.owner,
-            d(10000, 18),
+            d(100_000, BOOSTER_TOKEN_DECIMALS),
             DEPOSIT_TO_RESERVE,
         );
     }
@@ -555,15 +566,23 @@ impl Env {
         ft_storage_deposit(user, &tokens.ndai.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.nusdt.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.nusdc.account_id(), &user.account_id());
-        ft_storage_deposit(user, &self.booster_token.account_id(), &user.account_id());
+        ft_storage_deposit(
+            user,
+            &self.booster_contract.account_id(),
+            &user.account_id(),
+        );
 
-        let amount = 1000000;
+        let amount = 1_000_000;
         self.mint_ft(&tokens.wnear, user, d(amount, 24));
         self.mint_ft(&tokens.neth, user, d(amount, 18));
         self.mint_ft(&tokens.ndai, user, d(amount, 18));
         self.mint_ft(&tokens.nusdt, user, d(amount, 6));
         self.mint_ft(&tokens.nusdc, user, d(amount, 6));
-        self.mint_ft(&self.booster_token, user, d(amount, 18));
+        self.mint_ft(
+            &self.booster_contract.user_account,
+            user,
+            d(amount, BOOSTER_TOKEN_DECIMALS),
+        );
     }
 
     pub fn get_asset(&self, token: &UserAccount) -> AssetDetailedView {
@@ -597,6 +616,16 @@ impl Env {
     pub fn storage_balance_of(&self, user: &UserAccount) -> Option<StorageBalance> {
         self.near
             .view_method_call(self.contract.contract.storage_balance_of(user.account_id()))
+            .unwrap_json()
+    }
+
+    pub fn nel_balance_of(&self, user: &UserAccount) -> U128 {
+        self.near
+            .view_method_call(
+                self.booster_contract
+                    .contract
+                    .ft_balance_of(user.account_id()),
+            )
             .unwrap_json()
     }
 
