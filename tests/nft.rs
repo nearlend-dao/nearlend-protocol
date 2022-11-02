@@ -60,7 +60,7 @@ fn test_withdraw_nft() {
 }
 
 #[test]
-fn test_withdraw_nft_fail() {
+fn test_withdraw_nft_not_in_pool() {
     let (e, tokens, users) = basic_setup();
 
     e.mint_nft(&users.alice, "1".to_string());
@@ -81,6 +81,32 @@ fn test_withdraw_nft_fail() {
         _ => panic!("Should fail with error"),
     };
     assert!(err.contains("NFT not found in the NFT pool"));
+}
+
+#[test]
+fn test_withdraw_nft_not_owner() {
+    let (e, tokens, users) = basic_setup();
+
+    e.mint_nft(&users.alice, "1".to_string());
+    e.mint_nft(&users.bob, "2".to_string());
+
+    e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
+        .assert_success();
+    e.supply_nft_to_collateral(&users.bob, e.nft_contract.account_id(), "2".to_string())
+    .assert_success();
+
+    let res = e.withdraw_nft(
+        &users.alice,
+        price_data(&tokens, None, None, Some(100000)),
+        e.nft_contract.account_id(),
+        "2".to_string(),
+    );
+
+    let err = match res.status() {
+        ExecutionStatus::Failure(e) => e.to_string(),
+        _ => panic!("Should fail with error"),
+    };
+    assert!(err.contains("You are not authorized. You must be using the owner account"));
 }
 
 #[test]
