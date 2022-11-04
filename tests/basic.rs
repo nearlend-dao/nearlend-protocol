@@ -3,6 +3,7 @@ mod setup;
 use crate::setup::*;
 
 use contract::{BigDecimal, MS_PER_YEAR};
+use near_sdk::{serde_json::json, json_types::U128};
 
 const SEC_PER_YEAR: u32 = (MS_PER_YEAR / 1000) as u32;
 
@@ -68,6 +69,41 @@ fn test_deposit() {
     let asset1 = e.get_asset(&tokens.wnear);
     assert!(asset1.supplied.balance > supply_amount);
 
+}
+
+#[test]
+fn test_deposit_greate_than_the_balance() {
+    let (e, tokens, users) = basic_setup();
+    let supply_amount = d(10000000, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount);
+    let asset = e.get_asset(&tokens.wnear);
+    assert_eq!(asset.supplied.balance,0);
+    let balance: U128 =  e.get_balance(&tokens.wnear, &users.alice);    
+    println!("balance : {:?}" , balance);
+    println!("supply amount: {}" , supply_amount);
+
+}
+
+#[test]
+fn test_borrow_greater_than_collateral() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+    let borrow_amount = d(20000, 18);
+
+    e.borrow(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, Some(100000), None),
+        borrow_amount,
+    );
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.borrowed.balance, 0);
+    assert_eq!(asset.borrow_apr, 0);
+    assert_eq!(asset.supply_apr,0);
 }
 
 #[test]

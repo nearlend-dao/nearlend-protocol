@@ -424,6 +424,21 @@ impl Env {
             .assert_success();
     }
 
+    pub fn get_balance(&self, token: &UserAccount, account: &UserAccount) -> U128  {
+        let balance: U128 = account.view(token.account_id.clone(),
+         "ft_balance_of",
+         &json!({
+            "account_id": account.account_id(),
+        })
+        .to_string()
+        .into_bytes(),
+    )
+    .unwrap_json();
+    balance
+  
+
+    }
+
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
         ft_storage_deposit(user, &tokens.wnear.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.neth.account_id(), &user.account_id());
@@ -676,6 +691,8 @@ impl Env {
             0,
         )
     }
+
+   
 }
 
 pub fn init_token(e: &Env, token_account_id: &AccountId, decimals: u8) -> UserAccount {
@@ -729,6 +746,8 @@ impl Users {
         }
     }
 }
+
+
 
 pub fn d(value: Balance, decimals: u8) -> Balance {
     value * 10u128.pow(decimals as _)
