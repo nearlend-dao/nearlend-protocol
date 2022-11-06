@@ -625,10 +625,10 @@ fn test_farm_borrowed() {
         .unwrap();
     assert_eq!(booster_reward.remaining_rewards, total_reward);
 
-    let amount = d(100, 18);
+    let amount = d(1000, 18);
 
-    // deposit 100 nDAI to the farm
-    e.contract_ft_transfer_call(&tokens.ndai, &users.alice, amount, "")
+    // deposit 1000 nUSDT to the farm
+    e.contract_ft_transfer_call(&tokens.nusdt, &users.alice, amount, "")
         .assert_success();
 
     let asset = e.get_asset(&e.booster_contract.user_account);
