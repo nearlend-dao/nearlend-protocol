@@ -2,9 +2,18 @@ mod setup;
 
 use crate::setup::*;
 use contract::FarmId;
+use contract::*;
 
 #[test]
 fn test_farm_supplied() {
+    /*
+       Test Rewward farm with only 1 user Alice Deposit:
+        1. Add farm for Deposit DAI token with config:
+        - 100 NEL/day
+        - Total reward 3000 NEL
+        2. Deposit 100 DAI to Pool
+        3. Check reward amount for 3 days, 5 days and 30 days
+    */
     let (e, tokens, users) = basic_setup();
 
     println!("{:?}", e.booster_contract.user_account);
@@ -58,6 +67,7 @@ fn test_farm_supplied() {
 
     let account = e.get_account(&users.alice);
     assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    let nel_token_before = e.nel_balance_of(&users.alice).0;
     println!("===> Account before: {:?}", account);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
@@ -111,15 +121,15 @@ fn test_farm_supplied() {
 
     // claim the reward
     e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
 
     let asset = e.get_asset(&e.booster_contract.user_account);
     println!("{:?}", asset);
-    // assert_eq!(asset.supplied.balance, farmed_amount);
-    assert_eq!(asset.supplied.balance, 0);
-    println!(
-        "===> Account NEL token after claim: {:?}",
-        &e.nel_balance_of(&users.alice)
+    assert_eq!(
+        nel_token_after_skip_3_days - nel_token_before,
+        farmed_amount
     );
+    assert_eq!(asset.supplied.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
     assert_eq!(asset.supplied.balance, amount);
@@ -134,11 +144,16 @@ fn test_farm_supplied() {
     );
 
     let account = e.get_account(&users.alice);
+
+    println!(
+        "===> Account NEL token after claim: {:?}",
+        &e.nel_balance_of(&users.alice)
+    );
     assert_balances(
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(e.booster_contract.user_account.account_id(), farmed_amount),
+            //av(e.booster_contract.user_account.account_id(), farmed_amount),
         ],
     );
 
@@ -157,7 +172,6 @@ fn test_farm_supplied() {
     e.skip_time(ONE_DAY_SEC * 2);
 
     let asset = e.get_asset(&e.booster_contract.user_account);
-    // assert_eq!(asset.supplied.balance, farmed_amount);
     assert_eq!(asset.supplied.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
@@ -173,13 +187,7 @@ fn test_farm_supplied() {
     );
 
     let account = e.get_account(&users.alice);
-    assert_balances(
-        &account.supplied,
-        &[
-            av(tokens.ndai.account_id(), amount),
-            // av(e.booster_contract.user_account.account_id(), farmed_amount),
-        ],
-    );
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
@@ -194,7 +202,7 @@ fn test_farm_supplied() {
     );
 
     // next 30 days, the farm should get rewards
-    e.skip_time(ONE_DAY_SEC * 30);
+    e.skip_time(ONE_DAY_SEC * 25);
 
     let asset = e.get_asset(&tokens.ndai);
     assert_eq!(asset.supplied.balance, amount);
@@ -206,13 +214,7 @@ fn test_farm_supplied() {
     assert_eq!(booster_reward.remaining_rewards, 0);
 
     let account = e.get_account(&users.alice);
-    assert_balances(
-        &account.supplied,
-        &[
-            av(tokens.ndai.account_id(), amount),
-            // av(e.booster_contract.user_account.account_id(), farmed_amount),
-        ],
-    );
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
@@ -228,9 +230,587 @@ fn test_farm_supplied() {
 
     // Claim all rewards
     e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_30_days = e.nel_balance_of(&users.alice).0;
 
     let asset = e.get_asset(&e.booster_contract.user_account);
-    // assert_eq!(asset.supplied.balance, total_reward);
+    assert_eq!(
+        nel_token_after_skip_30_days - nel_token_before,
+        total_reward
+    );
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, amount);
+    assert!(asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .is_none());
+
+    let account = e.get_account(&users.alice);
+    println!("{:?}", account);
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert!(account.farms[0].rewards.is_empty());
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 3);
+
+    // No reward because remaining_rewards = 0
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
+    assert_eq!(
+        nel_token_after_skip_30_days - nel_token_after_skip_3_days,
+        0
+    );
+}
+
+#[test]
+fn test_farm_supplied_2() {
+    /*
+       Test Rewward farm with only 2 users Alice & Bob Deposit:
+        1. Add farm for Deposit DAI token with config:
+        - 100 NEL/day
+        - Total reward 3000 NEL
+        2. Alice Deposit 100 DAI to Pool, Bob deposit 300 DAI to Pool
+        3. Check reward amount for 3 days, 5 days and 30 days
+    */
+    let (e, tokens, users) = basic_setup();
+
+    println!("{:?}", e.booster_contract.user_account);
+    println!("{:?}", tokens);
+    println!("{:?}", users);
+
+    let reward_per_day = d(100, BOOSTER_TOKEN_DECIMALS);
+    let total_reward = d(3000, BOOSTER_TOKEN_DECIMALS);
+
+    let farm_id = FarmId::Supplied(tokens.ndai.account_id());
+    println!("==========> Farm Id: {:?}", farm_id);
+    // add farm reward
+    e.add_farm(
+        farm_id.clone(),
+        &e.booster_contract.user_account,
+        reward_per_day,
+        d(100, BOOSTER_TOKEN_DECIMALS),
+        total_reward,
+    );
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets Before deposit: {:?}", asset);
+    assert_eq!(asset.farms.len(), 1);
+    assert_eq!(asset.farms[0].farm_id, farm_id);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let alice_amount = d(100, 18);
+    let bob_amount = d(300, 18);
+
+    let total_amount_deposit = alice_amount + bob_amount;
+    let alice_ratio_reward = (alice_amount * 10_000 / total_amount_deposit) as u32;
+    let bob_ratio_reward = (bob_amount * 10_000 / total_amount_deposit) as u32;
+
+    // Alice deposit 100 nDAI to the farm
+    e.contract_ft_transfer_call(&tokens.ndai, &users.alice, alice_amount, "")
+        .assert_success();
+
+    // Bob deposit 300 nDAI to the farm
+    e.contract_ft_transfer_call(&tokens.ndai, &users.bob, bob_amount, "")
+        .assert_success();
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets After deposit: {:?}", asset);
+
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+    assert_balances(
+        &alice_account.supplied,
+        &[av(tokens.ndai.account_id(), alice_amount)],
+    );
+    assert_balances(
+        &bob_account.supplied,
+        &[av(tokens.ndai.account_id(), bob_amount)],
+    );
+
+    let alice_nel_token_before = e.nel_balance_of(&users.alice).0;
+    let bob_nel_token_before = e.nel_balance_of(&users.alice).0;
+    println!("===> Alice Account before: {:?}", alice_account);
+
+    assert_eq!(alice_account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        alice_account.farms[0].rewards[0].reward_token_id,
+        e.booster_contract.user_account.account_id()
+    );
+    assert_eq!(
+        alice_account.farms[0].rewards[0].boosted_shares,
+        find_asset(&alice_account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(alice_account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 3);
+
+    let farmed_amount = reward_per_day * 3;
+
+    println!("===> farmed_amount: {:?}", farmed_amount);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+    assert_balances(
+        &alice_account.supplied,
+        &[av(tokens.ndai.account_id(), alice_amount)],
+    );
+
+    println!("===> Account before claim: {:?}", alice_account);
+
+    assert_eq!(alice_account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        alice_account.farms[0].rewards[0].boosted_shares,
+        find_asset(&alice_account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        alice_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(alice_ratio_reward))
+    );
+
+    assert_eq!(
+        bob_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(bob_ratio_reward))
+    );
+
+    // claim the reward
+    e.account_farm_claim_all(&users.alice).assert_success();
+    e.account_farm_claim_all(&users.bob).assert_success();
+    let alice_nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
+    let bob_nel_token_after_skip_3_days = e.nel_balance_of(&users.bob).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    println!("{:?}", asset);
+    assert_eq!(
+        alice_nel_token_after_skip_3_days - alice_nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(alice_ratio_reward))
+    );
+    assert_eq!(
+        bob_nel_token_after_skip_3_days - bob_nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(bob_ratio_reward))
+    );
+    assert_eq!(asset.supplied.balance, 0);
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    assert_balances(
+        &alice_account.supplied,
+        &[av(tokens.ndai.account_id(), alice_amount)],
+    );
+
+    assert_eq!(alice_account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        alice_account.farms[0].rewards[0].boosted_shares,
+        find_asset(&alice_account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(alice_account.farms[0].rewards[0].unclaimed_amount, 0);
+    assert_eq!(bob_account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 2 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 2);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - reward_per_day * 5
+    );
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+
+    assert_eq!(alice_account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        alice_account.farms[0].rewards[0].boosted_shares,
+        find_asset(&alice_account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        bob_account.farms[0].rewards[0].boosted_shares,
+        find_asset(&bob_account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+
+    assert_eq!(
+        alice_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(reward_per_day * 2).mul_ratio(alice_ratio_reward))
+    );
+    assert_eq!(
+        bob_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(reward_per_day * 2).mul_ratio(bob_ratio_reward))
+    );
+
+    // next 30 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 25);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, 0);
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+
+    assert_eq!(
+        alice_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(
+            &BigDecimal::from(total_reward - farmed_amount).mul_ratio(alice_ratio_reward)
+        )
+    );
+    assert_eq!(
+        bob_account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(
+            &BigDecimal::from(total_reward - farmed_amount).mul_ratio(bob_ratio_reward)
+        )
+    );
+
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    e.account_farm_claim_all(&users.bob).assert_success();
+    let alice_nel_token_after_skip_30_days = e.nel_balance_of(&users.alice).0;
+    let bob_nel_token_after_skip_30_days = e.nel_balance_of(&users.bob).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(
+        alice_nel_token_after_skip_30_days - alice_nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(total_reward).mul_ratio(alice_ratio_reward))
+    );
+    assert_eq!(
+        bob_nel_token_after_skip_30_days - bob_nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(total_reward).mul_ratio(bob_ratio_reward))
+    );
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, total_amount_deposit);
+    assert!(asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .is_none());
+
+    let alice_account = e.get_account(&users.alice);
+    let bob_account = e.get_account(&users.bob);
+
+    assert_eq!(alice_account.farms[0].farm_id, farm_id);
+    assert!(alice_account.farms[0].rewards.is_empty());
+    assert_eq!(bob_account.farms[0].farm_id, farm_id);
+    assert!(bob_account.farms[0].rewards.is_empty());
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 3);
+
+    // No reward because remaining_rewards = 0
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    e.account_farm_claim_all(&users.bob).assert_success();
+    let alice_nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
+    let bob_nel_token_after_skip_3_days = e.nel_balance_of(&users.bob).0;
+    assert_eq!(
+        alice_nel_token_after_skip_30_days - alice_nel_token_after_skip_3_days,
+        0
+    );
+    assert_eq!(
+        bob_nel_token_after_skip_30_days - bob_nel_token_after_skip_3_days,
+        0
+    );
+}
+
+#[test]
+fn test_farm_borrowed() {
+    /*
+       Test Reward farm Borrow with only 1 user Alice Deposit:
+        1. Add farm for Deposit DAI token with config:
+        - 100 NEL/day
+        - Total reward 3000 NEL
+        2. Deposit 100 DAI to Pool
+        3. Borrow 50 USDT
+        4. Check reward amount for 3 days, 5 days and 30 days
+    */
+    let (e, tokens, users) = basic_setup();
+
+    println!("{:?}", e.booster_contract.user_account);
+    println!("{:?}", tokens);
+    println!("{:?}", users);
+
+    let reward_per_day = d(100, BOOSTER_TOKEN_DECIMALS);
+    let total_reward = d(3000, BOOSTER_TOKEN_DECIMALS);
+
+    let farm_id = FarmId::Supplied(tokens.ndai.account_id());
+    println!("==========> Farm Id: {:?}", farm_id);
+    // add farm reward
+    e.add_farm(
+        farm_id.clone(),
+        &e.booster_contract.user_account,
+        reward_per_day,
+        d(100, BOOSTER_TOKEN_DECIMALS),
+        total_reward,
+    );
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets Before deposit: {:?}", asset);
+    assert_eq!(asset.farms.len(), 1);
+    assert_eq!(asset.farms[0].farm_id, farm_id);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let amount = d(100, 18);
+
+    // deposit 100 nDAI to the farm
+    e.contract_ft_transfer_call(&tokens.ndai, &users.alice, amount, "")
+        .assert_success();
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets After deposit: {:?}", asset);
+
+    assert_eq!(asset.supplied.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let account = e.get_account(&users.alice);
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    let nel_token_before = e.nel_balance_of(&users.alice).0;
+    println!("===> Account before: {:?}", account);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].reward_token_id,
+        e.booster_contract.user_account.account_id()
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 3);
+
+    let farmed_amount = reward_per_day * 3;
+
+    println!("===> farmed_amount: {:?}", farmed_amount);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.alice);
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+
+    println!("===> Account before claim: {:?}", account);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, farmed_amount);
+
+    // claim the reward
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    println!("{:?}", asset);
+    assert_eq!(
+        nel_token_after_skip_3_days - nel_token_before,
+        farmed_amount
+    );
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.alice);
+
+    println!(
+        "===> Account NEL token after claim: {:?}",
+        &e.nel_balance_of(&users.alice)
+    );
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+
+    println!("===> Account after 3 days claim: {:?}", account);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 2 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 2);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.supplied.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - reward_per_day * 5
+    );
+
+    let account = e.get_account(&users.alice);
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        reward_per_day * 2
+    );
+
+    // next 30 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 25);
+
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.supplied.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, 0);
+
+    let account = e.get_account(&users.alice);
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.supplied, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        total_reward - farmed_amount
+    );
+
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_30_days = e.nel_balance_of(&users.alice).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(
+        nel_token_after_skip_30_days - nel_token_before,
+        total_reward
+    );
     assert_eq!(asset.supplied.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
@@ -252,6 +832,18 @@ fn test_farm_supplied() {
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert!(account.farms[0].rewards.is_empty());
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 3);
+
+    // No reward because remaining_rewards = 0
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_3_days = e.nel_balance_of(&users.alice).0;
+    assert_eq!(
+        nel_token_after_skip_30_days - nel_token_after_skip_3_days,
+        0
+    );
 }
 
 #[test]
@@ -686,7 +1278,6 @@ fn test_farm_supplied_two_users() {
         &account.supplied,
         &[
             av(tokens.ndai.account_id(), amount),
-            // av(tokens.nusdc.account_id(), farmed_amount * 2 / 5),
         ],
     );
 
