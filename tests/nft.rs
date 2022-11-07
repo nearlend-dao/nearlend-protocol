@@ -5,6 +5,10 @@ use contract::BigDecimal;
 use near_sdk::json_types::U128;
 use near_sdk_sim::transaction::ExecutionStatus;
 
+/// Alice has 2 NFTs in her account and Alice deposited 1 NFT ($30) to the pool.
+/// Expect results:
+/// 1. The NFT deposited has been recorded in NFT supplied of Alice's account
+/// 2. The NFT deposited has been recorded in the NFT asset supplied
 #[test]
 fn test_deposit_nft() {
     let (e, _, users) = basic_setup();
@@ -15,14 +19,25 @@ fn test_deposit_nft() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string())
         .assert_success();
 
+    // Check Alice NFT supplied in contract
     let account = e.get_account(&users.alice);
     assert_eq!(
         account.nft_supplied[0].nft_contract_id,
         e.nft_contract.account_id()
     );
     assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "2".to_string());
 }
 
+/// Alice has 1 NFT in her account and Alice tried to deposit 1 NFT she is not the owner.
+/// Expect results:
+/// 1. Can't deposit NFT, it's should fail with error: Sender must be the token owner
+/// 2. No NFT was recorded in NFT supplied in Alice's account
+/// 3. No NFT recorded in the NFT asset supplied
 #[test]
 fn test_deposit_nft_fail() {
     let (e, _, users) = basic_setup();
@@ -38,8 +53,22 @@ fn test_deposit_nft_fail() {
         _ => panic!("Should fail with error"),
     };
     assert!(err.contains("Sender must be the token owner"));
+
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.nft_supplied.len(), 0);
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied.len(), 0);
 }
 
+/// Alice has 2 NFTs in her account and Alice deposited 1 NFT ($30) to the pool.
+/// Alice withdraw the NFT from the pool
+/// Expect results:
+/// 1. NFT withdraw successfully
+/// 2. No NFT recorded in Alice account
+/// 3. No NFT recorded in NFT asset
 #[test]
 fn test_withdraw_nft() {
     let (e, tokens, users) = basic_setup();
@@ -50,6 +79,20 @@ fn test_withdraw_nft() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
         .assert_success();
 
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "1".to_string());
+
+    // Withdraw NFT
     e.withdraw_nft(
         &users.alice,
         price_data(&tokens, None, None, Some(100000)),
@@ -57,8 +100,20 @@ fn test_withdraw_nft() {
         "1".to_string(),
     )
     .assert_success();
+
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.nft_supplied.len(), 0);
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied.len(), 0);
 }
 
+/// Alice has 2 NFTs in her account and Alice deposited 1 NFT ($30) to the pool.
+/// Alice tried withdraw the NFT not deposited in pool
+/// Expect results:
+/// 1. NFT withdraw fail with error: NFT not found in the NFT pool
 #[test]
 fn test_withdraw_nft_not_in_pool() {
     let (e, tokens, users) = basic_setup();
@@ -69,6 +124,20 @@ fn test_withdraw_nft_not_in_pool() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "2".to_string())
         .assert_success();
 
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "2".to_string());
+
+    // Withdraw NFT
     let res = e.withdraw_nft(
         &users.alice,
         price_data(&tokens, None, None, Some(100000)),
@@ -81,8 +150,26 @@ fn test_withdraw_nft_not_in_pool() {
         _ => panic!("Should fail with error"),
     };
     assert!(err.contains("NFT not found in the NFT pool"));
+
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "2".to_string());
 }
 
+/// Alice has 1 NFT in her account and Alice deposited 1 NFT to the pool
+/// Bob has 1 NFT in his account and Bod deposited 1 NFT to the pool
+/// Alice tried to withdraw the NFT of Bod from the pool
+/// Expect results:
+/// 1. NFT withdraw fail with error: You are not authorized. You must be using the owner account
 #[test]
 fn test_withdraw_nft_not_owner() {
     let (e, tokens, users) = basic_setup();
@@ -92,9 +179,36 @@ fn test_withdraw_nft_not_owner() {
 
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
         .assert_success();
-    e.supply_nft_to_collateral(&users.bob, e.nft_contract.account_id(), "2".to_string())
-    .assert_success();
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
 
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "1".to_string());
+
+    e.supply_nft_to_collateral(&users.bob, e.nft_contract.account_id(), "2".to_string())
+        .assert_success();
+
+    // Check Bob NFT supplied in contract
+    let account = e.get_account(&users.bob);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[1].owner_id, users.bob.account_id());
+    assert_eq!(asset.nft_supplied[1].token_id, "2".to_string());
+
+    // Withdraw NFT
     let res = e.withdraw_nft(
         &users.alice,
         price_data(&tokens, None, None, Some(100000)),
@@ -107,8 +221,37 @@ fn test_withdraw_nft_not_owner() {
         _ => panic!("Should fail with error"),
     };
     assert!(err.contains("You are not authorized. You must be using the owner account"));
+
+    // Check Alice NFT supplied in contract
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
+
+    // Check Bob NFT supplied in contract
+    let account = e.get_account(&users.bob);
+    assert_eq!(
+        account.nft_supplied[0].nft_contract_id,
+        e.nft_contract.account_id()
+    );
+    assert_eq!(account.nft_supplied[0].nft_token_id, "2".to_string());
+
+    // Check NFT asset
+    let asset = e.get_asset(&e.nft_contract);
+    assert_eq!(asset.nft_supplied[0].owner_id, users.alice.account_id());
+    assert_eq!(asset.nft_supplied[0].token_id, "1".to_string());
+
+    assert_eq!(asset.nft_supplied[1].owner_id, users.bob.account_id());
+    assert_eq!(asset.nft_supplied[1].token_id, "2".to_string());
 }
 
+/// Alice supply 10 NEAR at $10 and 1 NFT at $30
+/// Alice borrowed 60 DAI
+/// Alice tried to withdraw NFT
+/// Expect results:
+/// 1. NFT withdraw fail with error: self.compute_max_discount(account, &prices) == BigDecimal::zero()
 #[test]
 fn test_withdraw_nft_fail_health_factor() {
     let (e, tokens, users) = basic_setup();
@@ -162,6 +305,10 @@ fn test_withdraw_nft_fail_health_factor() {
     assert_eq!(account.nft_supplied[0].nft_token_id, "1".to_string());
 }
 
+/// Alice suppply 1 NFT at $30
+/// Alice borrowed 10 DAI
+/// Expect results:
+/// 1. Borrow successfully
 #[test]
 fn test_deposit_nft_borrow_ft() {
     let (e, tokens, users) = basic_setup();
@@ -172,11 +319,11 @@ fn test_deposit_nft_borrow_ft() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
         .assert_success();
 
-    let borrow_amount = d(200, 18);
+    let borrow_amount = d(10, 18);
     e.borrow(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None, Some(1000000)),
+        price_data(&tokens, Some(100000), None, Some(300000)),
         borrow_amount,
     )
     .assert_success();
@@ -203,6 +350,10 @@ fn test_deposit_nft_borrow_ft() {
     assert!(account.borrowed[0].apr > BigDecimal::zero());
 }
 
+/// Alice suppply 1 NFT and 100 NEAR
+/// Alice borrowed 200 DAI and withdraw NFT
+/// Expect results:
+/// 1. Borrow FT and withdraw NFT successfully
 #[test]
 fn test_borrow_and_withdraw_nft() {
     let (e, tokens, users) = basic_setup();
@@ -254,6 +405,8 @@ fn test_borrow_and_withdraw_nft() {
 
 /// Alice puts 1000 USDC and 1 NFT ($30) and borrows 50 NEAR at 10$. Prices go up. REKT
 /// Bob liquidates Alice and makes nice profit (NFT).
+/// Expect results:
+/// 1. Bob liquidates Alice and makes nice profit
 #[test]
 fn test_liquidation_nft_alice_by_bob() {
     let (e, tokens, users) = basic_setup();
@@ -350,6 +503,8 @@ fn test_liquidation_nft_alice_by_bob() {
 
 /// Alice puts 1000 USDC and 1 NFT ($30) and borrows 50 NEAR at 10$, 50 USDT. Prices go up. REKT
 /// Bob liquidates Alice but doesn't meet requirement.
+/// Expect results:
+/// 1. Bob liquidates Alice but should fail with error: The health factor of liquidation account can't decrease.
 #[test]
 fn test_liquidation_nft_decrease_health_factor() {
     let (e, tokens, users) = basic_setup();
