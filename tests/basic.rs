@@ -163,10 +163,12 @@ fn test_borrow_and_withdraw() {
 #[test]
 fn test_repay() {
     let (e, tokens, users) = basic_setup();
+    // Alice supply 10000 NEAR
     let supply_amount = d(10000, 24);
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
         .assert_success();
 
+    // Alice borrowed 8000 DAI
     let borrow_amount = d(8000, 18);
     e.borrow_and_withdraw(
         &users.alice,
@@ -176,12 +178,45 @@ fn test_repay() {
     )
     .assert_success();
 
+    // Alice repay 8000 DAI
     let repay_amount = d(8000, 18);
     e.deposit_and_repay(&users.alice, &tokens.ndai, repay_amount)
         .assert_success();
 
+    // Alice has repay all DAI borrowed
     let account = e.get_account(&users.alice);
     assert_eq!(account.borrowed.len(), 0);
+}
+
+
+#[test]
+fn test_repay_partial() {
+    let (e, tokens, users) = basic_setup();
+    // Alice supply 10000 NEAR
+    let supply_amount = d(10000, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+
+    // Alice borrowed 8000 DAI
+    let borrow_amount = d(8000, 18);
+    e.borrow_and_withdraw(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, Some(100000), None, None),
+        borrow_amount,
+    )
+    .assert_success();
+
+    // Alice repay 3000 DAI
+    let repay_amount = d(3000, 18);
+    e.deposit_and_repay(&users.alice, &tokens.ndai, repay_amount)
+        .assert_success();
+
+    // Alice has repay 3000 DAI borrowed
+    let account = e.get_account(&users.alice);
+    assert_eq!(account.borrowed[0].balance, borrow_amount - repay_amount);
+    assert_eq!(account.borrowed[0].token_id, tokens.ndai.account_id());
+    assert!(account.borrowed[0].apr > BigDecimal::zero());
 }
 
 #[test]
