@@ -91,7 +91,10 @@ fn test_borrow_greater_than_collateral() {
     let (e, tokens, users) = basic_setup();
 
     let supply_amount = d(100, 24);
+    let supply_amount1 = d(100000, 24);
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+    e.supply_to_collateral(&users.bob, &tokens.wnear, supply_amount1)
         .assert_success();
     let borrow_amount = d(20000, 18);
 
@@ -108,6 +111,25 @@ fn test_borrow_greater_than_collateral() {
     println!("supply apr: {:?}", asset.supply_apr);
     assert_eq!(asset.borrowed.balance, 0);
     
+}
+
+#[test]
+fn test_borrow_with_price_data_none() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+    let borrow_amount = d(200, 18);
+
+    e.borrow(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, None, None),
+        borrow_amount,
+    );
+    let asset = e.get_asset(&tokens.ndai);
+    assert_eq!(asset.borrowed.balance, 0);
 }
 
 #[test]
