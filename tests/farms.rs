@@ -590,8 +590,8 @@ fn test_farm_borrowed() {
         1. Add farm for Deposit DAI token with config:
         - 100 NEL/day
         - Total reward 3000 NEL
-        2. Deposit 100 DAI to Pool
-        3. Borrow 50 USDT
+        2. Deposit 1000 USDT to Pool
+        3. Borrow 100 DAI
         4. Check reward amount for 3 days, 5 days and 30 days
     */
     let (e, tokens, users) = basic_setup();
@@ -625,19 +625,34 @@ fn test_farm_borrowed() {
         .unwrap();
     assert_eq!(booster_reward.remaining_rewards, total_reward);
 
-    let amount = d(1000, 18);
+    let dai_amount = d(100, 18);
+    let usdt_amount = d(1000, 6);
+    let amount = d(100, 18);
+
+    let ratio_reward_borrow = (amount * 10_000 / (dai_amount + amount)) as u32;
 
     // deposit 1000 nUSDT to the farm
-    e.contract_ft_transfer_call(&tokens.nusdt, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&tokens.nusdt, &users.alice, usdt_amount, "")
+        .assert_success();
+
+    // deposit 1000 nDAI to the farm
+    e.contract_ft_transfer_call(&tokens.ndai, &users.bob, dai_amount, "")
         .assert_success();
 
     let asset = e.get_asset(&e.booster_contract.user_account);
-    assert_eq!(asset.supplied.balance, 0);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    e.borrow(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, None, None, None),
+        amount,
+    );
 
     let asset = e.get_asset(&tokens.ndai);
     println!("=====> Assets After deposit: {:?}", asset);
 
-    assert_eq!(asset.supplied.balance, amount);
+    assert_eq!(asset.borrowed.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -646,7 +661,7 @@ fn test_farm_borrowed() {
     assert_eq!(booster_reward.remaining_rewards, total_reward);
 
     let account = e.get_account(&users.alice);
-    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
     let nel_token_before = e.nel_balance_of(&users.alice).0;
     println!("===> Account before: {:?}", account);
 
@@ -657,7 +672,7 @@ fn test_farm_borrowed() {
     );
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.supplied, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
             .shares
             .0,
     );
@@ -671,10 +686,9 @@ fn test_farm_borrowed() {
     println!("===> farmed_amount: {:?}", farmed_amount);
 
     let asset = e.get_asset(&e.booster_contract.user_account);
-    assert_eq!(asset.supplied.balance, 0);
+    assert_eq!(asset.borrowed.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
-    assert_eq!(asset.supplied.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -686,18 +700,16 @@ fn test_farm_borrowed() {
     );
 
     let account = e.get_account(&users.alice);
-    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
-
-    println!("===> Account before claim: {:?}", account);
-
-    assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.supplied, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
             .shares
             .0,
     );
-    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, farmed_amount);
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
+    );
 
     // claim the reward
     e.account_farm_claim_all(&users.alice).assert_success();
@@ -707,12 +719,12 @@ fn test_farm_borrowed() {
     println!("{:?}", asset);
     assert_eq!(
         nel_token_after_skip_3_days - nel_token_before,
-        farmed_amount
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
     );
-    assert_eq!(asset.supplied.balance, 0);
+    assert_eq!(asset.borrowed.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
-    assert_eq!(asset.supplied.balance, amount);
+    //assert_eq!(asset.borrowed.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -729,14 +741,14 @@ fn test_farm_borrowed() {
         "===> Account NEL token after claim: {:?}",
         &e.nel_balance_of(&users.alice)
     );
-    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    //assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
 
     println!("===> Account after 3 days claim: {:?}", account);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.supplied, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
             .shares
             .0,
     );
@@ -746,10 +758,10 @@ fn test_farm_borrowed() {
     e.skip_time(ONE_DAY_SEC * 2);
 
     let asset = e.get_asset(&e.booster_contract.user_account);
-    assert_eq!(asset.supplied.balance, 0);
+    assert_eq!(asset.borrowed.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
-    assert_eq!(asset.supplied.balance, amount);
+    //assert_eq!(asset.borrowed.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -761,25 +773,27 @@ fn test_farm_borrowed() {
     );
 
     let account = e.get_account(&users.alice);
-    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    //assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.supplied, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
             .shares
             .0,
     );
     assert_eq!(
         account.farms[0].rewards[0].unclaimed_amount,
-        reward_per_day * 2
+        BigDecimal::round_u128(
+            &BigDecimal::from(reward_per_day * 2).mul_ratio(ratio_reward_borrow)
+        )
     );
 
     // next 30 days, the farm should get rewards
     e.skip_time(ONE_DAY_SEC * 25);
 
     let asset = e.get_asset(&tokens.ndai);
-    assert_eq!(asset.supplied.balance, amount);
+    //assert_eq!(asset.borrowed.balance, amount);
     let booster_reward = asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -788,18 +802,20 @@ fn test_farm_borrowed() {
     assert_eq!(booster_reward.remaining_rewards, 0);
 
     let account = e.get_account(&users.alice);
-    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
+    //assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.supplied, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
             .shares
             .0,
     );
     assert_eq!(
         account.farms[0].rewards[0].unclaimed_amount,
-        total_reward - farmed_amount
+        BigDecimal::round_u128(
+            &BigDecimal::from(total_reward - farmed_amount).mul_ratio(ratio_reward_borrow)
+        )
     );
 
     // Claim all rewards
@@ -809,12 +825,12 @@ fn test_farm_borrowed() {
     let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(
         nel_token_after_skip_30_days - nel_token_before,
-        total_reward
+        BigDecimal::round_u128(&BigDecimal::from(total_reward).mul_ratio(ratio_reward_borrow))
     );
-    assert_eq!(asset.supplied.balance, 0);
+    assert_eq!(asset.borrowed.balance, 0);
 
     let asset = e.get_asset(&tokens.ndai);
-    assert_eq!(asset.supplied.balance, amount);
+    //assert_eq!(asset.borrowed.balance, amount);
     assert!(asset.farms[0]
         .rewards
         .get(&e.booster_contract.user_account.account_id())
@@ -822,13 +838,7 @@ fn test_farm_borrowed() {
 
     let account = e.get_account(&users.alice);
     println!("{:?}", account);
-    assert_balances(
-        &account.supplied,
-        &[
-            av(tokens.ndai.account_id(), amount),
-            // av(e.booster_contract.user_account.account_id(), total_reward),
-        ],
-    );
+    //assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(account.farms[0].farm_id, farm_id);
     assert!(account.farms[0].rewards.is_empty());
@@ -1274,12 +1284,7 @@ fn test_farm_supplied_two_users() {
     assert_eq!(booster_reward.boosted_shares, asset.supplied.shares.0 * 3);
 
     let account = e.get_account(&users.alice);
-    assert_balances(
-        &account.supplied,
-        &[
-            av(tokens.ndai.account_id(), amount),
-        ],
-    );
+    assert_balances(&account.supplied, &[av(tokens.ndai.account_id(), amount)]);
 
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
