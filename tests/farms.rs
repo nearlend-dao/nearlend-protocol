@@ -4,16 +4,14 @@ use crate::setup::*;
 use contract::FarmId;
 use contract::*;
 
+/// Test Rewward farm with only 1 user Alice Deposit:
+/// 1. Add farm for Deposit DAI token with config:
+/// - 100 NEL/day
+/// - Total reward 3000 NEL
+/// 2. Deposit 100 DAI to Pool
+/// 3. Check reward amount for 3 days, 5 days and 30 days
 #[test]
 fn test_farm_supplied() {
-    /*
-       Test Rewward farm with only 1 user Alice Deposit:
-        1. Add farm for Deposit DAI token with config:
-        - 100 NEL/day
-        - Total reward 3000 NEL
-        2. Deposit 100 DAI to Pool
-        3. Check reward amount for 3 days, 5 days and 30 days
-    */
     let (e, tokens, users) = basic_setup();
 
     println!("{:?}", e.booster_contract.user_account);
@@ -266,16 +264,14 @@ fn test_farm_supplied() {
     );
 }
 
+/// Test Rewward farm with only 2 users Alice & Bob Deposit:
+///  1. Add farm for Deposit DAI token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Alice Deposit 100 DAI to Pool, Bob deposit 300 DAI to Pool
+///  3. Check reward amount for 3 days, 5 days and 30 days
 #[test]
 fn test_farm_supplied_2() {
-    /*
-       Test Rewward farm with only 2 users Alice & Bob Deposit:
-        1. Add farm for Deposit DAI token with config:
-        - 100 NEL/day
-        - Total reward 3000 NEL
-        2. Alice Deposit 100 DAI to Pool, Bob deposit 300 DAI to Pool
-        3. Check reward amount for 3 days, 5 days and 30 days
-    */
     let (e, tokens, users) = basic_setup();
 
     println!("{:?}", e.booster_contract.user_account);
@@ -583,17 +579,15 @@ fn test_farm_supplied_2() {
     );
 }
 
+///  Test Reward farm Borrow with only 1 user Alice Deposit:
+///  1. Add farm for Deposit DAI token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Deposit 1000 USDT to Pool
+///  3. Borrow 100 DAI
+///  4. Check reward amount for 3 days, 5 days and 30 days
 #[test]
 fn test_farm_borrowed() {
-    /*
-       Test Reward farm Borrow with only 1 user Alice Deposit:
-        1. Add farm for Deposit DAI token with config:
-        - 100 NEL/day
-        - Total reward 3000 NEL
-        2. Deposit 1000 USDT to Pool
-        3. Borrow 100 DAI
-        4. Check reward amount for 3 days, 5 days and 30 days
-    */
     let (e, tokens, users) = basic_setup();
 
     println!("{:?}", e.booster_contract.user_account);
