@@ -264,7 +264,7 @@ fn test_farm_supplied() {
     );
 }
 
-/// Test Rewward farm with only 2 users Alice & Bob Deposit:
+///  Test Rewward farm with only 2 users Alice & Bob Deposit:
 ///  1. Add farm for Deposit DAI token with config:
 ///  - 100 NEL/day
 ///  - Total reward 3000 NEL
@@ -579,6 +579,17 @@ fn test_farm_supplied_2() {
     );
 }
 
+///  Test Reward farm Deposit with only 1 user Alice Deposit:
+///  1. Add farm for Deposit USDT token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Deposit 1000 USDT to Pool
+///  4. Check reward amount for 10 days,
+///  5. Withdraw 500 USDT
+///  6. Check reward 10 days next
+#[test]
+fn test_farm_supplied_3() {}
+
 ///  Test Reward farm Borrow with only 1 user Alice Deposit:
 ///  1. Add farm for Deposit DAI token with config:
 ///  - 100 NEL/day
@@ -849,6 +860,38 @@ fn test_farm_borrowed() {
         0
     );
 }
+
+///  Test Reward farm Borrow with only 1 user Alice Deposit:
+///  1. Add farm for Deposit USDT token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Deposit 1000 USDT to Pool
+///  4. Check reward amount for 10 days,
+///  5. Repay 500 USDT
+///  6. Check reward 10 days next
+#[test]
+fn test_farm_borrowed_2() {}
+
+///  Test Reward farm Borrow with only 1 user Alice Deposit:
+///  1. Add farm for Deposit USDT token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Deposit 1000 USDT to Pool
+///  4. Check reward amount for 10 days,
+///  5. Borrow more 500 USDT
+///  6. Check reward 10 days next
+#[test]
+fn test_farm_borrowed_3() {}
+
+///  Test Reward farm Borrow with only 1 user Alice Deposit:
+///  1. Add farm for Borrow & Deposit USDT & DAI token with config:
+///  - 100 NEL/day
+///  - Total reward 3000 NEL
+///  2. Deposit 1000 USDT to Pool
+///  2. Borrow 1000 DAI to Pool
+///  4. Check reward amount for 10 days,
+#[test]
+fn test_farm_supplied_and_borrowed() {}
 
 #[test]
 fn test_has_potential_farms() {
