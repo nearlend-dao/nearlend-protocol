@@ -866,29 +866,434 @@ fn test_farm_borrowed() {
 ///  - 100 NEL/day
 ///  - Total reward 3000 NEL
 ///  2. Deposit 1000 USDT to Pool
+///  3. Borrow 1000 DAI
 ///  4. Check reward amount for 10 days,
-///  5. Repay 500 USDT
+///  5. Repay 500 DAI
 ///  6. Check reward 10 days next
 #[test]
-fn test_farm_borrowed_2() {}
+fn test_farm_borrowed_2() {
+    let (e, tokens, users) = basic_setup();
+
+    let reward_per_day = d(100, BOOSTER_TOKEN_DECIMALS);
+    let total_reward = d(3000, BOOSTER_TOKEN_DECIMALS);
+
+    let farm_id = FarmId::Supplied(tokens.ndai.account_id());
+    println!("==========> Farm Id: {:?}", farm_id);
+    // add farm reward
+    e.add_farm(
+        farm_id.clone(),
+        &e.booster_contract.user_account,
+        reward_per_day,
+        d(100, BOOSTER_TOKEN_DECIMALS),
+        total_reward,
+    );
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets Before deposit: {:?}", asset);
+    assert_eq!(asset.farms.len(), 1);
+    assert_eq!(asset.farms[0].farm_id, farm_id);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let dai_amount = d(1000, 18);
+    let usdt_amount = d(1000, 6);
+    let amount = d(1000, 18);
+
+    let ratio_reward_borrow = (amount * 10_000 / (dai_amount + amount)) as u32;
+
+    // deposit 2000 nUSDT to the farm
+    e.contract_ft_transfer_call(&tokens.nusdt, &users.alice, usdt_amount, "")
+        .assert_success();
+
+    // deposit 1000 nDAI to the farm
+    e.contract_ft_transfer_call(&tokens.ndai, &users.bob, dai_amount, "")
+        .assert_success();
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    e.borrow(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, None, None, None),
+        amount,
+    );
+
+    let asset = e.get_asset(&tokens.ndai);
+    println!("=====> Assets After deposit: {:?}", asset);
+
+    assert_eq!(asset.borrowed.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let account = e.get_account(&users.alice);
+    assert_balances(&account.borrowed, &[av(tokens.ndai.account_id(), amount)]);
+    let nel_token_before = e.nel_balance_of(&users.alice).0;
+    println!("===> Account before: {:?}", account);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].reward_token_id,
+        e.booster_contract.user_account.account_id()
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 3 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 10);
+
+    let farmed_amount = reward_per_day * 10;
+
+    println!("===> farmed_amount: {:?}", farmed_amount);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.alice);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
+    );
+
+    // claim the reward
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_10_days = e.nel_balance_of(&users.alice).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    println!("{:?}", asset);
+    assert_eq!(
+        nel_token_after_skip_10_days - nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
+    );
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    //assert_eq!(asset.borrowed.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.alice);
+
+    println!(
+        "===> Account NEL token after claim: {:?}",
+        &e.nel_balance_of(&users.alice)
+    );
+
+    // Repay 500 USDT
+    let repay_amount = d(500, 18);
+    e.deposit_and_repay(&users.alice, &tokens.ndai, repay_amount);
+    // Update Ratio reward:
+    let ratio_reward_borrow = (amount.saturating_sub(repay_amount) * 10_000
+        / (dai_amount + amount.saturating_sub(repay_amount))) as u32;
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 2 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 10);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.ndai);
+    //assert_eq!(asset.borrowed.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - reward_per_day * 20
+    );
+
+    let account = e.get_account(&users.alice);
+
+    assert_eq!(account.farms[0].farm_id, farm_id);
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(
+            &BigDecimal::from(reward_per_day * 10).mul_ratio(ratio_reward_borrow)
+        )
+    );
+
+    // Claim all rewards
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_10_days = e.nel_balance_of(&users.alice).0;
+
+    assert_eq!(
+        nel_token_after_skip_10_days - nel_token_before,
+        BigDecimal::round_u128(
+            &BigDecimal::from(reward_per_day * 10).mul_ratio(ratio_reward_borrow)
+        )
+    );
+}
 
 ///  Test Reward farm Borrow with only 1 user Alice Deposit:
 ///  1. Add farm for Deposit USDT token with config:
 ///  - 100 NEL/day
 ///  - Total reward 3000 NEL
-///  2. Deposit 1000 USDT to Pool
+///  2. Deposit 4000 USDT to Pool
+///  3. Borrow 1000 USDT
 ///  4. Check reward amount for 10 days,
-///  5. Borrow more 500 USDT
+///  5. Borrow more 1000 USDT
 ///  6. Check reward 10 days next
 #[test]
-fn test_farm_borrowed_3() {}
+fn test_farm_borrowed_3() {
+    let (e, tokens, users) = basic_setup();
+
+    let reward_per_day = d(100, BOOSTER_TOKEN_DECIMALS);
+    let total_reward = d(3000, BOOSTER_TOKEN_DECIMALS);
+
+    let farm_usdt_id = FarmId::Supplied(tokens.nusdt.account_id());
+    println!("==========> Farm USDT Id: {:?}", farm_usdt_id);
+    // add farm reward DAI
+    e.add_farm(
+        farm_usdt_id.clone(),
+        &e.booster_contract.user_account,
+        reward_per_day,
+        d(100, BOOSTER_TOKEN_DECIMALS),
+        total_reward,
+    );
+
+    let asset = e.get_asset(&tokens.nusdt);
+    println!("=====> Assets Before deposit: {:?}", asset);
+    assert_eq!(asset.farms.len(), 1);
+    assert_eq!(asset.farms[0].farm_id, farm_usdt_id);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let usdt_amount = d(4000, 6);
+    let borrow_amount = d(1000, 6);
+
+    let ratio_reward_borrow = (borrow_amount * 10_000 / (usdt_amount + borrow_amount)) as u32;
+
+    // deposit 4000 nUSDT to the farm
+    e.contract_ft_transfer_call(&tokens.nusdt, &users.alice, usdt_amount, "")
+        .assert_success();
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    e.borrow(
+        &users.bob,
+        &tokens.nusdt,
+        price_data(&tokens, None, None, None),
+        borrow_amount,
+    );
+
+    let asset = e.get_asset(&tokens.nusdt);
+    println!("=====> Assets After deposit: {:?}", asset);
+
+    assert_eq!(asset.borrowed.balance, borrow_amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(booster_reward.remaining_rewards, total_reward);
+
+    let account = e.get_account(&users.bob);
+    assert_balances(
+        &account.borrowed,
+        &[av(tokens.nusdt.account_id(), borrow_amount)],
+    );
+    let nel_token_before = e.nel_balance_of(&users.bob).0;
+    println!("===> Account before: {:?}", account);
+
+    assert_eq!(account.farms[0].farm_id, farm_usdt_id);
+    assert_eq!(
+        account.farms[0].rewards[0].reward_token_id,
+        e.booster_contract.user_account.account_id()
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.nusdt.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 10 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 10);
+
+    let farmed_amount = reward_per_day * 10;
+
+    println!("===> farmed_amount: {:?}", farmed_amount);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.nusdt);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.bob);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.ndai.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
+    );
+
+    // claim the reward
+    e.account_farm_claim_all(&users.alice).assert_success();
+    let nel_token_after_skip_10_days = e.nel_balance_of(&users.bob).0;
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    println!("{:?}", asset);
+    assert_eq!(
+        nel_token_after_skip_10_days - nel_token_before,
+        BigDecimal::round_u128(&BigDecimal::from(farmed_amount).mul_ratio(ratio_reward_borrow))
+    );
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.nusdt);
+    //assert_eq!(asset.borrowed.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - farmed_amount
+    );
+
+    let account = e.get_account(&users.bob);
+
+    println!(
+        "===> Account NEL token after claim: {:?}",
+        &e.nel_balance_of(&users.bob)
+    );
+
+    // Continue borrow 3000 USDT
+    let borrow_amount_bonus = d(3000, 6);
+    e.borrow(
+        &users.bob,
+        &tokens.nusdt,
+        price_data(&tokens, None, None, None),
+        borrow_amount,
+    );
+    // Update Ratio reward:
+    let ratio_reward_borrow = (borrow_amount.saturating_add(borrow_amount_bonus) * 10_000
+        / (usdt_amount + borrow_amount.saturating_add(borrow_amount_bonus)))
+        as u32;
+
+    assert_eq!(account.farms[0].farm_id, farm_usdt_id);
+    assert_eq!(
+        account.farms[0].rewards[0].boosted_shares,
+        find_asset(&account.borrowed, &tokens.nusdt.account_id())
+            .shares
+            .0,
+    );
+    assert_eq!(account.farms[0].rewards[0].unclaimed_amount, 0);
+
+    // next 2 days, the farm should get rewards
+    e.skip_time(ONE_DAY_SEC * 10);
+
+    let asset = e.get_asset(&e.booster_contract.user_account);
+    assert_eq!(asset.borrowed.balance, 0);
+
+    let asset = e.get_asset(&tokens.nusdt);
+    //assert_eq!(asset.borrowed.balance, amount);
+    let booster_reward = asset.farms[0]
+        .rewards
+        .get(&e.booster_contract.user_account.account_id())
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        booster_reward.remaining_rewards,
+        total_reward - reward_per_day * 20
+    );
+
+    let account = e.get_account(&users.bob);
+
+    assert_eq!(account.farms[0].farm_id, farm_usdt_id);
+    assert_eq!(
+        account.farms[0].rewards[0].unclaimed_amount,
+        BigDecimal::round_u128(
+            &BigDecimal::from(reward_per_day * 10).mul_ratio(ratio_reward_borrow)
+        )
+    );
+
+    // Claim all rewards
+    e.account_farm_claim_all(&users.bob).assert_success();
+    let nel_token_after_skip_10_days = e.nel_balance_of(&users.bob).0;
+
+    assert_eq!(
+        nel_token_after_skip_10_days - nel_token_before,
+        BigDecimal::round_u128(
+            &BigDecimal::from(reward_per_day * 10).mul_ratio(ratio_reward_borrow)
+        )
+    );
+}
 
 ///  Test Reward farm Borrow with only 1 user Alice Deposit:
 ///  1. Add farm for Borrow & Deposit USDT & DAI token with config:
-///  - 100 NEL/day
+///  - 100 NEL/day for DAI
+///  - 100 NEL/day for USDT
 ///  - Total reward 3000 NEL
 ///  2. Deposit 1000 USDT to Pool
-///  2. Borrow 1000 DAI to Pool
+///  3. Borrow 1000 DAI to Pool
 ///  4. Check reward amount for 10 days,
 #[test]
 fn test_farm_supplied_and_borrowed() {}
