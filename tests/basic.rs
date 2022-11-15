@@ -194,6 +194,37 @@ fn test_borrow_and_withdraw() {
 }
 
 #[test]
+fn test_borrow_and_withdraw_more_than_deposit() {
+    let (e, tokens, users) = basic_setup();
+
+    let supply_amount = d(100, 24);
+    e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
+        .assert_success();
+
+    let borrow_amount = d(200, 18);
+    let withdraw_amount = d(250, 18);
+
+    e.borrow(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, Some(100000), None),
+        borrow_amount,
+    )
+    .assert_success();
+
+    e.withdraw(
+        &users.alice,
+        &tokens.ndai,
+        price_data(&tokens, Some(100000), None),
+        withdraw_amount,
+    );
+
+     assert!(asset.borrowed.balance < withdraw_amount);
+   
+}
+
+
+#[test]
 fn test_interest() {
     let (e, tokens, users) = basic_setup();
 
