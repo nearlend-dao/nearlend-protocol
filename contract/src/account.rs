@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Account {
     /// A copy of an account ID. Saves one storage_read when iterating on accounts.
