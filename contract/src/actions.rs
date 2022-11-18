@@ -57,7 +57,10 @@ impl Contract {
         prices: Prices,
     ) {
         let mut need_risk_check = false;
+        let mut need_risk_check_borrow = false;
         let mut need_number_check = false;
+        let pre_account = account.clone();
+
         for action in actions {
             match action {
                 Action::Withdraw(asset_amount) => {
@@ -83,7 +86,7 @@ impl Contract {
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
-                    need_risk_check = true;
+                    need_risk_check_borrow = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
                     let amount = self.internal_borrow(account, &asset_amount);
@@ -155,8 +158,12 @@ impl Contract {
                     <= self.internal_config().max_num_assets as _
             );
         }
+        if need_risk_check_borrow {
+            assert!(self.compute_max_discount(&pre_account, account, &prices) == BigDecimal::zero());
+        }
+
         if need_risk_check {
-            assert!(self.compute_max_discount(account, &prices) == BigDecimal::zero());
+            assert!(self.compute_max_discount(&account, account, &prices) == BigDecimal::zero());
         }
 
         self.internal_account_apply_affected_farms(account);
@@ -394,7 +401,7 @@ impl Contract {
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
 
-        let max_discount = self.compute_max_discount(&liquidation_account, prices);
+        let max_discount = self.compute_max_discount(&liquidation_account, &liquidation_account, &prices);
         assert!(
             max_discount > BigDecimal::zero(),
             "The liquidation account is not at risk"
@@ -478,7 +485,7 @@ impl Contract {
             borrowed_repaid_sum
         );
 
-        let new_max_discount = self.compute_max_discount(&liquidation_account, prices);
+        let new_max_discount = self.compute_max_discount(&liquidation_account, &liquidation_account, &prices);
         assert!(
             new_max_discount > BigDecimal::zero(),
             "The liquidation amount is too large. The liquidation account should stay in risk"
@@ -511,7 +518,7 @@ impl Contract {
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
 
-        let max_discount = self.compute_max_discount(&liquidation_account, prices);
+        let max_discount = self.compute_max_discount(&liquidation_account, &liquidation_account, &prices);
         assert!(
             max_discount > BigDecimal::zero(),
             "The liquidation account is not at risk"
@@ -564,7 +571,7 @@ impl Contract {
             borrowed_repaid_sum
         );
 
-        let new_max_discount = self.compute_max_discount(&liquidation_account, prices);
+        let new_max_discount = self.compute_max_discount(&liquidation_account, &liquidation_account, &prices);
         assert!(
             new_max_discount > BigDecimal::zero(),
             "The liquidation amount is too large. The liquidation account should stay in risk"
@@ -651,13 +658,13 @@ impl Contract {
         events::emit::force_close(liquidation_account_id, &collateral_sum, &borrowed_sum);
     }
 
-    pub fn compute_max_discount(&self, account: &Account, prices: &Prices) -> BigDecimal {
+    pub fn compute_max_discount(&self, pre_account: &Account, account: &Account, prices: &Prices) -> BigDecimal {
         if account.borrowed.is_empty() {
             return BigDecimal::zero();
         }
 
         let collateral_sum =
-            account
+            pre_account
                 .supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (token_id, shares)| {
@@ -670,9 +677,10 @@ impl Contract {
                     )
                     .mul_ratio(asset.config.volatility_ratio)
                 });
+        log!("Tien - collateral_sum: {:?}", collateral_sum.to_string());
 
         let nft_collateral_sum =
-            account
+            pre_account
                 .nft_supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (_, account_nft_asset)| {
@@ -686,6 +694,7 @@ impl Contract {
                     )
                     .mul_ratio(asset.config.volatility_ratio)
                 });
+        log!("Tien - nft_collateral_sum: {:?}", nft_collateral_sum.to_string());
 
         let borrowed_sum =
             account
@@ -701,8 +710,12 @@ impl Contract {
                     )
                     .div_ratio(asset.config.volatility_ratio)
                 });
+        log!("Tien - borrowed_sum: {:?}", borrowed_sum.to_string());
 
         let total_collateral_sum = collateral_sum.add(nft_collateral_sum);
+
+        log!("Tien - total_collateral_sum: {:?}", total_collateral_sum.to_string());
+        log!("Tien - HF: {:?}", (total_collateral_sum / borrowed_sum).to_string());
 
         if borrowed_sum <= total_collateral_sum {
             BigDecimal::zero()

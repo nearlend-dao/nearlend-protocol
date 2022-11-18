@@ -251,7 +251,7 @@ fn test_withdraw_nft_not_owner() {
 /// Alice borrowed 60 DAI
 /// Alice tried to withdraw NFT
 /// Expect results:
-/// 1. NFT withdraw fail with error: self.compute_max_discount(account, &prices) == BigDecimal::zero()
+/// 1. NFT withdraw fail with error: compute_max_discount
 #[test]
 fn test_withdraw_nft_fail_health_factor() {
     let (e, tokens, users) = basic_setup();
@@ -295,7 +295,7 @@ fn test_withdraw_nft_fail_health_factor() {
         ExecutionStatus::Failure(e) => e.to_string(),
         _ => panic!("Should fail with health error"),
     };
-    assert!(err.contains("self.compute_max_discount(account, &prices) == BigDecimal::zero()"));
+    assert!(err.contains("compute_max_discount"));
 
     let account = e.get_account(&users.alice);
     assert_eq!(
@@ -319,7 +319,7 @@ fn test_deposit_nft_borrow_ft() {
     e.supply_nft_to_collateral(&users.alice, e.nft_contract.account_id(), "1".to_string())
         .assert_success();
 
-    let borrow_amount = d(10, 18);
+    let borrow_amount = d(8, 18);
     e.borrow(
         &users.alice,
         &tokens.ndai,
