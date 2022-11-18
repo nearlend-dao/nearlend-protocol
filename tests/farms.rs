@@ -1189,8 +1189,8 @@ fn test_farm_borrowed_3() {
 
     println!("===> farmed_amount: {:?}", farmed_amount);
 
-    let asset = e.get_asset(&e.booster_contract.user_account);
-    assert_eq!(asset.borrowed.balance, 0);
+    //let asset = e.get_asset(&e.booster_contract.user_account);
+    //assert_eq!(asset.borrowed.balance, 0);
 
     let asset = e.get_asset(&tokens.nusdt);
     let booster_reward = asset.farms[0]
@@ -1206,7 +1206,7 @@ fn test_farm_borrowed_3() {
     let account = e.get_account(&users.bob);
     assert_eq!(
         account.farms[0].rewards[0].boosted_shares,
-        find_asset(&account.borrowed, &tokens.ndai.account_id())
+        find_asset(&account.borrowed, &tokens.nusdt.account_id())
             .shares
             .0,
     );
