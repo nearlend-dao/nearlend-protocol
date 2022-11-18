@@ -57,6 +57,7 @@ impl Contract {
         prices: Prices,
     ) {
         let mut need_risk_check = false;
+        let mut need_risk_check_borrow = false;
         let mut need_number_check = false;
         let pre_account = account.clone();
 
@@ -85,7 +86,7 @@ impl Contract {
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
-                    need_risk_check = true;
+                    need_risk_check_borrow = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
                     let amount = self.internal_borrow(account, &asset_amount);
@@ -157,8 +158,13 @@ impl Contract {
                     <= self.internal_config().max_num_assets as _
             );
         }
-        if need_risk_check {
+
+        if need_risk_check_borrow {
             assert!(self.compute_max_discount(&pre_account, account, &prices) == BigDecimal::zero());
+        }
+
+        if need_risk_check {
+            assert!(self.compute_max_discount(account, account, &prices) == BigDecimal::zero());
         }
 
         self.internal_account_apply_affected_farms(account);
