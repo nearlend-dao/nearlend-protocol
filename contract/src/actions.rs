@@ -677,7 +677,6 @@ impl Contract {
                     )
                     .mul_ratio(asset.config.volatility_ratio)
                 });
-        log!("Tien - collateral_sum: {:?}", collateral_sum.to_string());
 
         let nft_collateral_sum =
             pre_account
@@ -694,7 +693,6 @@ impl Contract {
                     )
                     .mul_ratio(asset.config.volatility_ratio)
                 });
-        log!("Tien - nft_collateral_sum: {:?}", nft_collateral_sum.to_string());
 
         let borrowed_sum =
             account
@@ -710,12 +708,8 @@ impl Contract {
                     )
                     .div_ratio(asset.config.volatility_ratio)
                 });
-        log!("Tien - borrowed_sum: {:?}", borrowed_sum.to_string());
 
         let total_collateral_sum = collateral_sum.add(nft_collateral_sum);
-
-        log!("Tien - total_collateral_sum: {:?}", total_collateral_sum.to_string());
-        log!("Tien - HF: {:?}", (total_collateral_sum / borrowed_sum).to_string());
 
         if borrowed_sum <= total_collateral_sum {
             BigDecimal::zero()
