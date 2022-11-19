@@ -12,6 +12,7 @@ near-contract-standards = "=4.0.0-pre.7"
 common = { path = "./common"}
 contract = { path = "./contract" }
 test-oracle = { path = "./test-oracle" }
+test-fungible-token = { path = "./test-fungible-token" }
 
 approx = "0.5"
 
