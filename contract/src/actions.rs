@@ -57,7 +57,10 @@ impl Contract {
         prices: Prices,
     ) {
         let mut need_risk_check = false;
+        let mut need_risk_check_borrow = false;
         let mut need_number_check = false;
+        let pre_account = account.clone();
+
         for action in actions {
             match action {
                 Action::Withdraw(asset_amount) => {
@@ -83,7 +86,7 @@ impl Contract {
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
-                    need_risk_check = true;
+                    need_risk_check_borrow = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
                     let amount = self.internal_borrow(account, &asset_amount);
@@ -155,6 +158,7 @@ impl Contract {
                     <= self.internal_config().max_num_assets as _
             );
         }
+
         if need_risk_check {
             assert!(self.compute_max_discount(account, &prices) == BigDecimal::zero());
         }
@@ -393,8 +397,8 @@ impl Contract {
         out_nft_assets: Vec<NFTAsset>,
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
-
         let max_discount = self.compute_max_discount(&liquidation_account, prices);
+
         assert!(
             max_discount > BigDecimal::zero(),
             "The liquidation account is not at risk"
@@ -510,8 +514,8 @@ impl Contract {
         out_assets: Vec<AssetAmount>,
     ) {
         let mut liquidation_account = self.internal_unwrap_account(liquidation_account_id);
-
         let max_discount = self.compute_max_discount(&liquidation_account, prices);
+
         assert!(
             max_discount > BigDecimal::zero(),
             "The liquidation account is not at risk"
@@ -657,7 +661,7 @@ impl Contract {
         }
 
         let collateral_sum =
-            account
+            pre_account
                 .supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (token_id, shares)| {
@@ -672,7 +676,7 @@ impl Contract {
                 });
 
         let nft_collateral_sum =
-            account
+            pre_account
                 .nft_supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (_, account_nft_asset)| {
