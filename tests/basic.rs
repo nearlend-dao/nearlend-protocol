@@ -180,7 +180,7 @@ fn test_borrow_with_price_data_none() {
     e.borrow(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, None, None),
+        price_data(&tokens, None, None, None),
         borrow_amount,
     );
     let asset = e.get_asset(&tokens.ndai);
@@ -205,7 +205,7 @@ fn test_borrow_greater_than_collateral() {
     e.borrow(
         &users.alice,
         &tokens.ndai,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     );
     // view asset
