@@ -15,7 +15,7 @@ pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
     ContractContract as NearlendContract, PriceReceiverMsg, TokenReceiverMsg,
 };
-use contract::{AssetFarmView, AssetView, FarmId};
+use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
@@ -151,7 +151,7 @@ impl Env {
         let contract = deploy!(
             contract: NearlendContract,
             contract_id: NEARLEND_ID.to_string(),
-            bytes: &contract_bytes,
+            bytes: contract_bytes,
             signer_account: near,
             deposit: to_yocto("20"),
             gas: DEFAULT_GAS.0,
@@ -424,6 +424,21 @@ impl Env {
             .assert_success();
     }
 
+    pub fn get_balance(&self, token: &UserAccount, account: &UserAccount) -> U128  {
+        let balance: U128 = account.view(token.account_id.clone(),
+         "ft_balance_of",
+         &json!({
+            "account_id": account.account_id(),
+        })
+        .to_string()
+        .into_bytes(),
+    )
+    .unwrap_json();
+    balance
+  
+
+    }
+
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
         ft_storage_deposit(user, &tokens.wnear.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.neth.account_id(), &user.account_id());
@@ -491,7 +506,7 @@ impl Env {
         token: &UserAccount,
         amount: Balance,
     ) -> ExecutionResult {
-        self.contract_ft_transfer_call(&token, &user, amount, "")
+        self.contract_ft_transfer_call(token, user, amount, "")
     }
 
     pub fn oracle_call(
@@ -519,7 +534,7 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Borrow(asset_amount(token, amount))],
@@ -535,11 +550,29 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![
                     Action::Borrow(asset_amount(token, amount)),
+                    Action::Withdraw(asset_amount(token, amount)),
+                ],
+            },
+        )
+    }
+
+    pub fn withdraw(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        price_data: PriceData,
+        amount: Balance,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![
                     Action::Withdraw(asset_amount(token, amount)),
                 ],
             },
@@ -555,13 +588,34 @@ impl Env {
         out_assets: Vec<AssetAmount>,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Liquidate {
                     account_id: liquidation_user.account_id(),
                     in_assets,
                     out_assets,
+                }],
+            },
+        )
+    }
+
+    pub fn liquidate_nft(
+        &self,
+        user: &UserAccount,
+        liquidation_user: &UserAccount,
+        price_data: PriceData,
+        in_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::LiquidateNFT {
+                    account_id: liquidation_user.account_id(),
+                    in_assets,
+                    out_nft_assets,
                 }],
             },
         )
@@ -574,7 +628,7 @@ impl Env {
         price_data: PriceData,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::ForceClose {
@@ -655,6 +709,8 @@ impl Env {
             0,
         )
     }
+
+   
 }
 
 pub fn init_token(e: &Env, token_account_id: &AccountId, decimals: u8) -> UserAccount {
@@ -672,7 +728,7 @@ pub fn init_token(e: &Env, token_account_id: &AccountId, decimals: u8) -> UserAc
                 icon: None,
                 reference: None,
                 reference_hash: None,
-                decimals: decimals,
+                decimals,
             }
         })
         .to_string()
@@ -708,6 +764,8 @@ impl Users {
         }
     }
 }
+
+
 
 pub fn d(value: Balance, decimals: u8) -> Balance {
     value * 10u128.pow(decimals as _)

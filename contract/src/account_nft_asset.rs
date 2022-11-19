@@ -8,17 +8,23 @@ pub struct AccountNFTAsset {
     pub deposit_timestamp: Timestamp,
 }
 
+impl Default for AccountNFTAsset {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AccountNFTAsset {
     pub fn new() -> Self {
         Self {
             nft_contract_id: env::current_account_id(),
-            nft_token_id: String::from("0"),
+            nft_token_id: "0".to_string(),
             deposit_timestamp: env::block_timestamp(),
         }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.nft_token_id == String::from("0")
+        self.nft_token_id == "0"
     }
 }
 impl Account {
@@ -34,9 +40,7 @@ impl Account {
         &self,
         nft_contract_token_id: &NFTContractTokenId,
     ) -> Option<AccountNFTAsset> {
-        self.nft_supplied
-            .get(nft_contract_token_id)
-            .map(|x| x.clone())
+        self.nft_supplied.get(nft_contract_token_id).cloned()
     }
 
     pub fn internal_get_nft_asset_or_default(
@@ -56,7 +60,7 @@ impl Account {
             self.nft_supplied.remove(nft_contract_token_id);
         } else {
             self.nft_supplied
-                .insert(nft_contract_token_id.clone(), account_nft_asset.into());
+                .insert(nft_contract_token_id.clone(), account_nft_asset);
         }
     }
 }

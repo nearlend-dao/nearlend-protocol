@@ -2,8 +2,8 @@ mod setup;
 
 use crate::setup::*;
 
-const PREVIOUS_VERSION: &'static str = "0.5.1";
-const LATEST_VERSION: &'static str = "0.6.0";
+const PREVIOUS_VERSION: &str = "0.5.1";
+const LATEST_VERSION: &str = "0.6.0";
 
 #[test]
 fn test_version() {
