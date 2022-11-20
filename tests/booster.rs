@@ -9,15 +9,15 @@ fn test_booster_stake_unstake() {
     let (e, _tokens, users) = basic_setup();
 
     let amount = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&e.booster_contract.user_account, &users.alice, amount, "")
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, amount);
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount);
-    assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+    assert_eq!(account.supplied[0].token_id, e.booster_contract.user_account.account_id());
     assert!(account.booster_staking.is_none());
 
     let duration_sec: DurationSec = MAX_DURATION_SEC;
@@ -25,7 +25,7 @@ fn test_booster_stake_unstake() {
     e.account_stake_booster(&users.alice, amount, duration_sec)
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let account = e.get_account(&users.alice);
@@ -57,12 +57,12 @@ fn test_booster_stake_unstake() {
     e.account_unstake_booster(&users.alice).assert_success();
     assert!(!e.account_unstake_booster(&users.alice).is_ok());
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, amount);
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount);
-    assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+    assert_eq!(account.supplied[0].token_id, e.booster_contract.user_account.account_id());
     assert!(account.booster_staking.is_none());
     assert!(!e.account_unstake_booster(&users.alice).is_ok());
 }
@@ -72,7 +72,7 @@ fn test_booster_add_stake() {
     let (e, _tokens, users) = basic_setup();
 
     let amount = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&e.booster_contract.user_account, &users.alice, amount, "")
         .assert_success();
 
     let duration_sec: DurationSec = MAX_DURATION_SEC;
@@ -84,12 +84,12 @@ fn test_booster_add_stake() {
         .account_stake_booster(&users.alice, amount / 2, duration_sec - 1)
         .is_ok());
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, amount / 2);
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount / 2);
-    assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+    assert_eq!(account.supplied[0].token_id, e.booster_contract.user_account.account_id());
     let booster_staking = account.booster_staking.unwrap();
     assert_eq!(booster_staking.staked_booster_amount, amount / 2);
     assert_eq!(booster_staking.x_booster_amount, amount / 2 * 4);
@@ -103,7 +103,7 @@ fn test_booster_add_stake() {
     e.account_stake_booster(&users.alice, amount / 2, duration_sec / 2)
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let account = e.get_account(&users.alice);
@@ -127,12 +127,12 @@ fn test_booster_add_stake() {
     e.skip_time(duration_sec / 2);
     e.account_unstake_booster(&users.alice).assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, amount);
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount);
-    assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+    assert_eq!(account.supplied[0].token_id, e.booster_contract.user_account.account_id());
     assert!(account.booster_staking.is_none());
 }
 
@@ -141,7 +141,7 @@ fn test_booster_add_stake_extend_duration() {
     let (e, _tokens, users) = basic_setup();
 
     let amount = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&e.booster_contract.user_account, &users.alice, amount, "")
         .assert_success();
 
     let duration_sec: DurationSec = MAX_DURATION_SEC;
@@ -154,7 +154,7 @@ fn test_booster_add_stake_extend_duration() {
     e.account_stake_booster(&users.alice, amount / 2, duration_sec)
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let account = e.get_account(&users.alice);
@@ -173,12 +173,12 @@ fn test_booster_add_stake_extend_duration() {
     e.skip_time(duration_sec / 2);
     e.account_unstake_booster(&users.alice).assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, amount);
 
     let account = e.get_account(&users.alice);
     assert_eq!(account.supplied[0].balance, amount);
-    assert_eq!(account.supplied[0].token_id, e.booster_token.account_id());
+    assert_eq!(account.supplied[0].token_id, e.booster_contract.user_account.account_id());
     assert!(account.booster_staking.is_none());
 }
 
@@ -187,7 +187,7 @@ fn test_booster_stake_bad_args() {
     let (e, _tokens, users) = basic_setup();
 
     let amount = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&e.booster_contract.user_account, &users.alice, amount, "")
         .assert_success();
 
     // Amount can't be 0
@@ -216,7 +216,7 @@ fn test_booster_stake_all() {
     let (e, _tokens, users) = basic_setup();
 
     let amount = d(100, 18);
-    e.contract_ft_transfer_call(&e.booster_token, &users.alice, amount, "")
+    e.contract_ft_transfer_call(&e.booster_contract.user_account, &users.alice, amount, "")
         .assert_success();
 
     users
@@ -234,7 +234,7 @@ fn test_booster_stake_all() {
         )
         .assert_success();
 
-    let asset = e.get_asset(&e.booster_token);
+    let asset = e.get_asset(&e.booster_contract.user_account);
     assert_eq!(asset.supplied.balance, 0);
 
     let account = e.get_account(&users.alice);
