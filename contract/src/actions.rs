@@ -56,22 +56,18 @@ impl Contract {
         actions: Vec<Action>,
         prices: Prices,
     ) {
-        let mut need_risk_check = false;
-        // let mut need_risk_check_borrow = false;
+        let mut need_risk_check_borrow = false;
         let mut need_number_check = false;
-        // let pre_account = account.clone();
 
         for action in actions {
             match action {
                 Action::Withdraw(asset_amount) => {
-                    need_risk_check = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     let amount = self.internal_withdraw(account, &asset_amount);
                     self.internal_ft_transfer(account_id, &asset_amount.token_id, amount);
                     events::emit::withdraw_started(account_id, amount, &asset_amount.token_id);
                 }
                 Action::WithdrawNFT(nft_asset) => {
-                    need_risk_check = true;
                     self.internal_withdraw_nft(account_id, account, &nft_asset);
                     self.internal_nft_transfer(
                         account_id,
@@ -86,7 +82,7 @@ impl Contract {
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
-                    // need_risk_check_borrow = true;
+                    need_risk_check_borrow = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
                     let amount = self.internal_borrow(account, &asset_amount);
@@ -158,8 +154,7 @@ impl Contract {
                     <= self.internal_config().max_num_assets as _
             );
         }
-
-        if need_risk_check {
+        if need_risk_check_borrow {
             assert!(self.compute_max_discount(account, &prices) == BigDecimal::zero());
         }
 

@@ -562,6 +562,42 @@ impl Env {
 
     }
 
+    fn sample_token_metadata(&self) -> TokenMetadata {
+        TokenMetadata {
+            title: Some("Olympus Mons".into()),
+            description: Some("The tallest mountain in the charted solar system".into()),
+            media: None,
+            media_hash: None,
+            copies: Some(1u64),
+            issued_at: None,
+            expires_at: None,
+            starts_at: None,
+            updated_at: None,
+            extra: None,
+            reference: None,
+            reference_hash: None,
+        }
+    }
+
+    pub fn mint_nft(&self, receiver: &UserAccount, token_id: NFTTokenId) {
+        self.owner
+            .call(
+                self.nft_contract.account_id.clone(),
+                "nft_mint",
+                &json!({
+                    "token_id": token_id,
+                    "token_owner_id": receiver.account_id(),
+                    "receiver_id": receiver.account_id(),
+                    "token_metadata": self.sample_token_metadata(),
+                })
+                .to_string()
+                .into_bytes(),
+                DEFAULT_GAS.0,
+                MINT_STORAGE_COST,
+            )
+            .assert_success();
+    }
+
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
         ft_storage_deposit(user, &tokens.wnear.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.neth.account_id(), &user.account_id());
@@ -754,6 +790,28 @@ impl Env {
                 actions: vec![
                     Action::Borrow(asset_amount(token, amount)),
                     Action::Withdraw(asset_amount(token, amount)),
+                ],
+            },
+        )
+    }
+
+    pub fn borrow_and_withdraw_nft(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        price_data: PriceData,
+        amount: Balance,
+        nft_conntract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![
+                    Action::Borrow(asset_amount(token, amount)),
+                    Action::Withdraw(asset_amount(token, amount)),
+                    Action::WithdrawNFT(nft_asset(nft_conntract_id, nft_token_id)),
                 ],
             },
         )
