@@ -759,24 +759,6 @@ impl Env {
         )
     }
 
-    pub fn withdraw(
-        &self,
-        user: &UserAccount,
-        token: &UserAccount,
-        price_data: PriceData,
-        amount: Balance,
-    ) -> ExecutionResult {
-        self.oracle_call(
-            user,
-            price_data,
-            PriceReceiverMsg::Execute {
-                actions: vec![
-                    Action::Withdraw(asset_amount(token, amount)),
-                ],
-            },
-        )
-    }
-
     pub fn liquidate(
         &self,
         user: &UserAccount,

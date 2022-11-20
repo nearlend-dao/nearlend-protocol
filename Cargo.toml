@@ -31,5 +31,4 @@ members = [
     "common",
     "contract",
     "test-oracle",
-    "unit-tests",
 ]

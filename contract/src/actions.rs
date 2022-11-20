@@ -57,9 +57,9 @@ impl Contract {
         prices: Prices,
     ) {
         let mut need_risk_check = false;
-        let mut need_risk_check_borrow = false;
+        // let mut need_risk_check_borrow = false;
         let mut need_number_check = false;
-        let pre_account = account.clone();
+        // let pre_account = account.clone();
 
         for action in actions {
             match action {
@@ -86,7 +86,7 @@ impl Contract {
                 }
                 Action::Borrow(asset_amount) => {
                     need_number_check = true;
-                    need_risk_check_borrow = true;
+                    // need_risk_check_borrow = true;
                     account.add_affected_farm(FarmId::Supplied(asset_amount.token_id.clone()));
                     account.add_affected_farm(FarmId::Borrowed(asset_amount.token_id.clone()));
                     let amount = self.internal_borrow(account, &asset_amount);
@@ -661,7 +661,7 @@ impl Contract {
         }
 
         let collateral_sum =
-            pre_account
+        account
                 .supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (token_id, shares)| {
@@ -676,7 +676,7 @@ impl Contract {
                 });
 
         let nft_collateral_sum =
-            pre_account
+        account
                 .nft_supplied
                 .iter()
                 .fold(BigDecimal::zero(), |sum, (_, account_nft_asset)| {
