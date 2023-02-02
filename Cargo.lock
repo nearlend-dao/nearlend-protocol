@@ -2031,7 +2031,6 @@ dependencies = [
  "near-contract-standards",
  "near-sdk",
  "near-sdk-sim",
- "test-fungible-token",
  "test-oracle",
 ]
 
@@ -2939,15 +2938,6 @@ dependencies = [
  "redox_syscall 0.2.16",
  "remove_dir_all",
  "winapi",
-]
-
-[[package]]
-name = "test-fungible-token"
-version = "0.1.0"
-dependencies = [
- "common",
- "near-contract-standards",
- "near-sdk",
 ]
 
 [[package]]

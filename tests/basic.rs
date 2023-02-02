@@ -3,7 +3,7 @@ mod setup;
 use crate::setup::*;
 
 use contract::{BigDecimal, MS_PER_YEAR};
-use near_sdk::{serde_json::json, json_types::U128};
+use near_sdk::json_types::U128;
 
 const SEC_PER_YEAR: u32 = (MS_PER_YEAR / 1000) as u32;
 
@@ -51,7 +51,6 @@ fn test_supply() {
     assert_eq!(account.supplied[0].balance, amount);
     assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
 }
-
 
 /// Alice puts 100 NEAR and withdraw 20 NEAR, (NEAR at 10$).
 #[test]
@@ -104,13 +103,13 @@ fn test_withdraw_fail() {
 fn test_deposit() {
     let (e, tokens, users) = basic_setup();
 
-    let supply_amount = d(100, 24);   
-    //supply collateral 
+    let supply_amount = d(100, 24);
+    //supply collateral
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
         .assert_success();
     // view asset
     let asset = e.get_asset(&tokens.wnear);
-    assert_eq!(asset.supplied.balance,supply_amount.clone());
+    assert_eq!(asset.supplied.balance, supply_amount.clone());
 }
 
 #[test]
@@ -118,21 +117,16 @@ fn test_deposit_greate_than_the_balance() {
     let (e, tokens, users) = basic_setup();
 
     let supply_amount = d(10000000, 24);
-    // supply  collateral greater  than the balance account 
+    // supply  collateral greater  than the balance account
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount);
 
     // view asset, deposit fail
     let asset = e.get_asset(&tokens.wnear);
-    assert_eq!(asset.supplied.balance,0);
-    let balance: U128 =  e.get_balance(&tokens.wnear, &users.alice);    
-    println!("balance : {:?}" , balance);
-    println!("supply amount: {}" , supply_amount);
-
+    assert_eq!(asset.supplied.balance, 0);
+    let balance: U128 = e.get_balance(&tokens.wnear, &users.alice);
+    println!("balance : {:?}", balance);
+    println!("supply amount: {}", supply_amount);
 }
-
-
-
-
 
 #[test]
 fn test_borrow() {
@@ -193,7 +187,7 @@ fn test_borrow_greater_than_collateral() {
 
     let supply_amount = d(100, 24);
     let supply_amount1 = d(100000, 24);
-    // alice deposit 
+    // alice deposit
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
         .assert_success();
     // bob deposit
@@ -210,11 +204,10 @@ fn test_borrow_greater_than_collateral() {
     );
     // view asset
     let asset = e.get_asset(&tokens.ndai);
-    println!("borrowed balance : {:?}" , asset.borrowed.balance);
+    println!("borrowed balance : {:?}", asset.borrowed.balance);
     println!("borrow apr: {:?}", asset.borrow_apr);
     println!("supply apr: {:?}", asset.supply_apr);
     assert_eq!(asset.borrowed.balance, 0);
-    
 }
 
 #[test]
@@ -224,7 +217,7 @@ fn test_borrow_and_withdraw() {
     let supply_amount = d(100, 24);
     e.supply_to_collateral(&users.alice, &tokens.wnear, supply_amount)
         .assert_success();
-        
+
     let borrow_amount = d(200, 18);
     e.borrow_and_withdraw(
         &users.alice,
@@ -273,7 +266,6 @@ fn test_repay() {
     let account = e.get_account(&users.alice);
     assert_eq!(account.borrowed.len(), 0);
 }
-
 
 #[test]
 fn test_repay_partial() {
