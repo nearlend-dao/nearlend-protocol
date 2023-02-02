@@ -3,7 +3,7 @@ mod setup;
 use crate::setup::*;
 
 use contract::{BigDecimal, MS_PER_YEAR};
-use near_sdk::{json_types::U128};
+use near_sdk::json_types::U128;
 
 const SEC_PER_YEAR: u32 = (MS_PER_YEAR / 1000) as u32;
 

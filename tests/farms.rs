@@ -1371,13 +1371,8 @@ fn test_farm_supplied_xbooster() {
     );
 
     let booster_amount = d(5, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.alice,
-        booster_amount,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
+        .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
         .assert_success();
@@ -1434,13 +1429,8 @@ fn test_farm_supplied_xbooster() {
     assert_eq!(account.farms[0].rewards[0].unclaimed_amount, farmed_amount);
 
     let booster_amount = d(95, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.alice,
-        booster_amount,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
+        .assert_success();
 
     // Increasing booster stake updates all farms.
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
@@ -1485,19 +1475,13 @@ fn test_farm_supplied_xbooster() {
     assert_eq!(booster_staking.x_booster_amount, d(400, 18));
 }
 
-
 #[test]
 fn test_farm_supplied_xbooster_unstake() {
     let (e, tokens, users) = basic_setup();
 
     let booster_amount = d(5, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.alice,
-        booster_amount,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount, "")
+        .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount, MAX_DURATION_SEC)
         .assert_success();
@@ -1608,25 +1592,15 @@ fn test_farm_supplied_two_users() {
     let (e, tokens, users) = basic_setup();
 
     let booster_amount_alice = d(5, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.alice,
-        booster_amount_alice,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.alice, booster_amount_alice, "")
+        .assert_success();
 
     e.account_stake_booster(&users.alice, booster_amount_alice, MAX_DURATION_SEC)
         .assert_success();
 
     let booster_amount_bob = d(100, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.bob,
-        booster_amount_bob,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.bob, booster_amount_bob, "")
+        .assert_success();
 
     e.account_stake_booster(&users.bob, booster_amount_bob, MAX_DURATION_SEC)
         .assert_success();
@@ -1717,13 +1691,8 @@ fn test_farm_supplied_two_users() {
     );
 
     let extra_booster_amount = d(95, 18);
-    e.contract_ft_transfer_call(
-        &e.booster_token,
-        &users.alice,
-        extra_booster_amount,
-        "",
-    )
-    .assert_success();
+    e.contract_ft_transfer_call(&e.booster_token, &users.alice, extra_booster_amount, "")
+        .assert_success();
 
     // Increasing booster stake updates all farms.
     e.account_stake_booster(&users.alice, extra_booster_amount, MAX_DURATION_SEC)

@@ -639,7 +639,7 @@ impl Env {
         nft_contract_id: NFTContractId,
         nft_token_id: NFTTokenId,
     ) -> ExecutionResult {
-        self.contract_nft_transfer_call(user, nft_contract_id.clone(), nft_token_id.clone(), "")
+        self.contract_nft_transfer_call(user, nft_contract_id, nft_token_id, "")
     }
 
     pub fn deposit_and_repay(
@@ -1089,7 +1089,7 @@ pub fn find_asset<'a>(assets: &'a [AssetView], token_id: &AccountId) -> &'a Asse
     assets
         .iter()
         .find(|e| &e.token_id == token_id)
-        .expect(msg.as_str())
+        .unwrap_or_else(|| panic!("{}", msg))
 }
 
 pub fn assert_balances(actual: &[AssetView], expected: &[AssetView]) {
