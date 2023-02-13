@@ -217,7 +217,8 @@ impl Contract {
         let mut farm_ids = vec![];
         for token_id in self.asset_ids.iter() {
             farm_ids.push(FarmId::Supplied(token_id.clone()));
-            farm_ids.push(FarmId::Borrowed(token_id));
+            farm_ids.push(FarmId::Borrowed(token_id.clone()));
+            farm_ids.push(FarmId::SuppliedNFT(token_id));
         }
         self.get_asset_farms(farm_ids)
     }

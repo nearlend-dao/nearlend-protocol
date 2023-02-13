@@ -72,6 +72,7 @@ impl Contract {
                 }
                 Action::WithdrawNFT(nft_asset) => {
                     need_risk_check = true;
+                    account.add_affected_farm(FarmId::SuppliedNFT(nft_asset.nft_contract_id.clone()));
                     self.internal_withdraw_nft(account_id, account, &nft_asset);
                     self.internal_nft_transfer(
                         account_id,

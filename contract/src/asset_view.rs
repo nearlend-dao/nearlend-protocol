@@ -42,6 +42,7 @@ impl Contract {
             .get_asset_farms(vec![
                 FarmId::Supplied(token_id.clone()),
                 FarmId::Borrowed(token_id.clone()),
+                FarmId::SuppliedNFT(token_id.clone()),
             ])
             .into_iter()
             .map(|(farm_id, asset_farm)| AssetFarmView {

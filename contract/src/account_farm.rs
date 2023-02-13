@@ -17,6 +17,7 @@ use crate::*;
 pub enum FarmId {
     Supplied(TokenId),
     Borrowed(TokenId),
+    SuppliedNFT(TokenId),
 }
 
 impl FarmId {
@@ -24,6 +25,7 @@ impl FarmId {
         match self {
             FarmId::Supplied(token_id) => token_id,
             FarmId::Borrowed(token_id) => token_id,
+            FarmId::SuppliedNFT(token_id) => token_id,
         }
     }
 }
@@ -188,6 +190,10 @@ impl Contract {
             let shares = match &farm_id {
                 FarmId::Supplied(token_id) => account.get_supplied_shares(token_id).0,
                 FarmId::Borrowed(token_id) => account.get_borrowed_shares(token_id).0,
+                FarmId::SuppliedNFT(nft_contract_id) => {
+                    let nft_shares = account.get_nft_supplied_shares(nft_contract_id);
+                    nft_shares.0
+                }
             };
             for (token_id, asset_farm_reward) in asset_farm.rewards.iter_mut() {
                 let account_farm_reward = account_farm.rewards.get_mut(token_id).unwrap();
