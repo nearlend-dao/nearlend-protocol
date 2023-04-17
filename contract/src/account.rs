@@ -106,6 +106,13 @@ impl Account {
         let mut potential_farms = HashSet::new();
         potential_farms.extend(self.supplied.keys().cloned().map(FarmId::Supplied));
         potential_farms.extend(self.borrowed.keys().cloned().map(FarmId::Borrowed));
+        let nft_farmids = self.nft_supplied.keys().cloned().map(|s| {
+            FarmId::SuppliedNFT(AccountId::new_unchecked(
+                s.split(NFT_DELIMETER).next().unwrap().to_string(),
+            ))
+        });
+        potential_farms.extend(nft_farmids);
+
         potential_farms
     }
 
@@ -122,6 +129,18 @@ impl Account {
             .get(token_id)
             .cloned()
             .unwrap_or_else(|| 0.into())
+    }
+
+    pub fn get_nft_supplied_shares(&self, token_id: &TokenId) -> Shares {
+        let filtered_keys: Vec<&String> = self
+            .nft_supplied
+            .keys()
+            .filter(|key| key.starts_with(&token_id.to_string()))
+            .collect();
+        let nft_supplied_len = filtered_keys.len() as u128;
+        // Fix NFT balance is 1 (decimals 24)
+        let nft_shares = nft_supplied_len * 10u128.pow(24);
+        U128::from(nft_shares)
     }
 }
 

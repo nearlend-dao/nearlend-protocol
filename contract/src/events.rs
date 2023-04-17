@@ -54,6 +54,17 @@ pub mod emit {
         );
     }
 
+    pub fn deposit_nft(account_id: &AccountId, nft_contract_id: &NFTContractId, token_id: &NFTTokenId) {
+        log_event(
+            "deposit_nft",
+            AccountNFTToken {
+                account_id,
+                nft_contract_id,
+                token_id,
+            },
+        );
+    }
+
     pub fn withdraw_started(account_id: &AccountId, amount: Balance, token_id: &TokenId) {
         log_event(
             "withdraw_started",

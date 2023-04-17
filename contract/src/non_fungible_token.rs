@@ -52,10 +52,14 @@ impl NonFungibleTokenReceiver for Contract {
         );
 
         let mut account = self.internal_unwrap_account(&sender_id);
-        account.add_affected_farm(FarmId::Supplied(nft_contract_id.clone()));
+        account.add_affected_farm(FarmId::SuppliedNFT(nft_contract_id.clone()));
 
         // Add NFT to the account assets
         self.internal_nft_deposit(&mut account, &nft_contract_id, &token_id);
+
+        events::emit::deposit_nft(&sender_id,  &nft_contract_id, &token_id);
+        let actions: Vec<Action> = vec![];
+        self.internal_execute(&sender_id, &mut account, actions, Prices::new());
 
         // Save all change to the account
         self.internal_set_account(&sender_id, account);
@@ -115,7 +119,7 @@ impl ExtSelf for Contract {
         let promise_success = is_promise_success();
         if !promise_success {
             let mut account = self.internal_unwrap_account(&account_id);
-            // account.add_affected_farm(FarmId::Supplied(nft_contract_id.clone()));
+            account.add_affected_farm(FarmId::SuppliedNFT(nft_contract_id.clone()));
             self.internal_nft_deposit(&mut account, &nft_contract_id, &token_id);
             events::emit::withdraw_nft_failed(&account_id, &nft_contract_id, &token_id);
             self.internal_set_account(&account_id, account);
