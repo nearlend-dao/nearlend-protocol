@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Default)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Default, Clone)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
 #[serde(crate = "near_sdk::serde")]
 pub struct BoosterStaking {
@@ -100,7 +100,7 @@ impl Contract {
         account
             .affected_farms
             .extend(account.get_all_potential_farms());
-        account.add_affected_farm(FarmId::Supplied(config.booster_token_id.clone()));
+        account.add_affected_farm(FarmId::Supplied(config.booster_token_id));
         self.internal_account_apply_affected_farms(&mut account);
         self.internal_set_account(&account_id, account);
     }

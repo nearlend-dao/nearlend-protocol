@@ -16,12 +16,21 @@ pub struct AssetView {
 #[derive(Serialize)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
 #[serde(crate = "near_sdk::serde")]
+pub struct AssetNFTView {
+    pub nft_contract_id: NFTContractId,
+    pub nft_token_id: NFTTokenId,
+    pub deposit_timestamp: Timestamp,
+}
+
+#[derive(Serialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[serde(crate = "near_sdk::serde")]
 pub struct AccountDetailedView {
     pub account_id: AccountId,
-    /// A list of assets that are supplied by the account (but not used a collateral).
+    /// A list of assets that are supplied by the account used as collateral.
     pub supplied: Vec<AssetView>,
-    /// A list of assets that are used as a collateral.
-    pub collateral: Vec<AssetView>,
+    /// A list of nft assets that are supplied by the account used a collateral.
+    pub nft_supplied: Vec<AssetNFTView>,
     /// A list of assets that are borrowed.
     pub borrowed: Vec<AssetView>,
     /// Account farms
@@ -52,15 +61,30 @@ pub struct AccountFarmRewardView {
     pub unclaimed_amount: Balance,
 }
 
+#[derive(Serialize)]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Debug, Deserialize))]
+#[serde(crate = "near_sdk::serde")]
+pub struct AccountSimpleView {
+    /// A copy of an account ID. Saves one storage_read when iterating on accounts.
+    pub account_id: AccountId,
+    /// A list of assets that are supplied by the account used as collateral.
+    pub collateral: Vec<AssetView>,
+    /// A list of nft assets that are supplied by the account used a collateral.
+    pub nft: Vec<AssetNFTView>,
+    /// A list of borrowed assets.
+    pub borrowed: Vec<AssetView>,
+}
+
 impl Contract {
     pub fn account_into_detailed_view(&self, account: Account) -> AccountDetailedView {
         let mut potential_farms = account.get_all_potential_farms();
         let farms = account
             .farms
             .keys()
+            .cloned()
             .map(|farm_id| {
                 // Remove already active farm.
-                potential_farms.retain(|f| f != &farm_id);
+                potential_farms.remove(&farm_id);
                 let mut asset_farm = self.internal_unwrap_asset_farm(&farm_id, true);
                 let (account_farm, new_rewards, inactive_rewards) =
                     self.internal_account_farm_claim(&account, &farm_id, &asset_farm);
@@ -104,29 +128,53 @@ impl Contract {
             .any(|farm_id| self.asset_farms.contains_key(&farm_id));
         AccountDetailedView {
             account_id: account.account_id,
-            supplied: unordered_map_pagination(&account.supplied, None, None)
+            supplied: account
+                .supplied
                 .into_iter()
-                .map(|(token_id, AccountAsset { shares })| {
-                    self.get_asset_view(token_id, shares, false)
-                })
+                .map(|(token_id, shares)| self.get_asset_view(token_id, shares, false))
                 .collect(),
-            collateral: account
-                .collateral
+            nft_supplied: account
+                .nft_supplied
                 .into_iter()
-                .map(|CollateralAsset { token_id, shares }| {
-                    self.get_asset_view(token_id, shares, false)
+                .map(|(_, account_nft_asset)| AssetNFTView {
+                    nft_contract_id: account_nft_asset.nft_contract_id,
+                    nft_token_id: account_nft_asset.nft_token_id,
+                    deposit_timestamp: account_nft_asset.deposit_timestamp,
                 })
                 .collect(),
             borrowed: account
                 .borrowed
                 .into_iter()
-                .map(|BorrowedAsset { token_id, shares }| {
-                    self.get_asset_view(token_id, shares, true)
-                })
+                .map(|(token_id, shares)| self.get_asset_view(token_id, shares, true))
                 .collect(),
             farms,
             has_non_farmed_assets,
             booster_staking: account.booster_staking,
+        }
+    }
+
+    pub fn account_into_simple_view(&self, account: Account) -> AccountSimpleView {
+        AccountSimpleView {
+            account_id: account.account_id,
+            collateral: account
+                .supplied
+                .into_iter()
+                .map(|(token_id, shares)| self.get_asset_view(token_id, shares, false))
+                .collect(),
+            nft: account
+                .nft_supplied
+                .into_iter()
+                .map(|(_, account_nft_asset)| AssetNFTView {
+                    nft_contract_id: account_nft_asset.nft_contract_id,
+                    nft_token_id: account_nft_asset.nft_token_id,
+                    deposit_timestamp: account_nft_asset.deposit_timestamp,
+                })
+                .collect(),
+            borrowed: account
+                .borrowed
+                .into_iter()
+                .map(|(token_id, shares)| self.get_asset_view(token_id, shares, true))
+                .collect(),
         }
     }
 

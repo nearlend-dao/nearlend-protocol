@@ -13,9 +13,17 @@ pub mod emit {
         pub token_id: &'a TokenId,
     }
 
+    #[derive(Serialize)]
+    #[serde(crate = "near_sdk::serde")]
+    struct AccountNFTToken<'a> {
+        pub account_id: &'a AccountId,
+        pub nft_contract_id: &'a NFTContractId,
+        pub token_id: &'a NFTTokenId,
+    }
+
     fn log_event<T: Serialize>(event: &str, data: T) {
         let event = json!({
-            "standard": "burrow",
+            "standard": "nearlend",
             "version": "1.0.0",
             "event": event,
             "data": [data]
@@ -28,9 +36,9 @@ pub mod emit {
         log_event(
             "deposit_to_reserve",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -39,9 +47,20 @@ pub mod emit {
         log_event(
             "deposit",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
+            },
+        );
+    }
+
+    pub fn deposit_nft(account_id: &AccountId, nft_contract_id: &NFTContractId, token_id: &NFTTokenId) {
+        log_event(
+            "deposit_nft",
+            AccountNFTToken {
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
@@ -50,9 +69,9 @@ pub mod emit {
         log_event(
             "withdraw_started",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -61,9 +80,9 @@ pub mod emit {
         log_event(
             "withdraw_failed",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -72,31 +91,54 @@ pub mod emit {
         log_event(
             "withdraw_succeeded",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
 
-    pub fn increase_collateral(account_id: &AccountId, amount: Balance, token_id: &TokenId) {
+    pub fn withdraw_nft_started(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
         log_event(
-            "increase_collateral",
-            AccountAmountToken {
-                account_id: &account_id,
-                amount,
-                token_id: &token_id,
+            "withdraw_nft_started",
+            AccountNFTToken {
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
 
-    pub fn decrease_collateral(account_id: &AccountId, amount: Balance, token_id: &TokenId) {
+    pub fn withdraw_nft_failed(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
         log_event(
-            "decrease_collateral",
-            AccountAmountToken {
-                account_id: &account_id,
-                amount,
-                token_id: &token_id,
+            "withdraw_nft_failed",
+            AccountNFTToken {
+                account_id,
+                nft_contract_id,
+                token_id,
+            },
+        );
+    }
+
+    pub fn withdraw_nft_succeeded(
+        account_id: &AccountId,
+        nft_contract_id: &NFTContractId,
+        token_id: &NFTTokenId,
+    ) {
+        log_event(
+            "withdraw_nft_succeeded",
+            AccountNFTToken {
+                account_id,
+                nft_contract_id,
+                token_id,
             },
         );
     }
@@ -105,9 +147,9 @@ pub mod emit {
         log_event(
             "borrow",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }
@@ -116,9 +158,9 @@ pub mod emit {
         log_event(
             "repay",
             AccountAmountToken {
-                account_id: &account_id,
+                account_id,
                 amount,
-                token_id: &token_id,
+                token_id,
             },
         );
     }

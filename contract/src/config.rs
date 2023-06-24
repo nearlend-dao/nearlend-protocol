@@ -2,6 +2,8 @@ use crate::*;
 
 pub const MIN_BOOSTER_MULTIPLIER: u32 = 10000;
 
+pub const NFT_DELIMETER: &str = "@";
+
 /// Contract config
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -65,7 +67,7 @@ impl Contract {
     }
 
     pub fn get_oracle_account_id(&self) -> AccountId {
-        self.internal_config().oracle_account_id.into()
+        self.internal_config().oracle_account_id
     }
 
     pub fn assert_owner(&self) {
@@ -151,8 +153,12 @@ impl Contract {
     ) {
         assert_one_yocto();
         self.assert_owner();
+        match &farm_id {
+            FarmId::Supplied(token_id) | FarmId::Borrowed(token_id) |  FarmId::SuppliedNFT(token_id) => {
+                assert!(self.assets.contains_key(token_id));
+            }
+        };
         assert!(self.assets.contains_key(farm_id.get_token_id()));
-        let reward_token_id: TokenId = reward_token_id.into();
         let mut reward_asset = self.internal_unwrap_asset(&reward_token_id);
         assert!(
             reward_asset.reserved >= reward_amount.0

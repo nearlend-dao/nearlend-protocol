@@ -1,0 +1,149 @@
+{
+  "0 - Contract": {
+    "accounts - UnorderedMap<AccountId, VAccount>": "",
+    "storage - LookupMap<AccountId, VStorage>": "",
+    "assets - LookupMap<TokenId, VAsset>": "",
+    "asset_farms - LookupMap<FarmId, VAssetFarm>": "",
+    "asset_ids - UnorderedSet<TokenId>": "",
+    "config - LazyOption<Config>": ""
+  },
+  "1 - Asset": {
+    "supplied - <Pool>": {
+      "shared": "u128",
+      "balance": "u128"
+    },
+    "borrowed - <Pool>": {
+      "shared": "u128",
+      "balance": "u128"
+    },
+    "reserved - <Balance>": "u128",
+    "last_update_timestamp": "Timestamp",
+    "config - <AssetConfig>": {
+      "reserve_ratio": "u32",
+      "target_utilization": "u32",
+      "target_utilization_rate": "LowU128",
+      "max_utilization_rate": "LowU128",
+      "volatility_ratio": "u32",
+      "extra_decimals": "u8",
+      "can_deposit": "u8",
+      "can_withdraw": "bool",
+      "can_use_as_collateral": "bool",
+      "can_borrow": "bool"
+    }
+  },
+  "2 - AssetDetailed": {
+    "supplied - <Pool>": {
+      "shared": "u128",
+      "balance": "u128"
+    },
+    "borrowed - <Pool>": {
+      "shared": "u128",
+      "balance": "u128"
+    },
+    "reserved - <Balance>": "u128",
+    "last_update_timestamp": "Timestamp",
+    "config - <AssetConfig>": {
+      "reserve_ratio": "u32",
+      "target_utilization": "u32",
+      "target_utilization_rate": "LowU128",
+      "max_utilization_rate": "LowU128",
+      "volatility_ratio": "u32",
+      "extra_decimals": "u8",
+      "can_deposit": "u8",
+      "can_withdraw": "bool",
+      "can_use_as_collateral": "bool",
+      "can_borrow": "bool"
+    },
+    "supply_apr": "BigDecimal",
+    "borrow_apr": "BigDecimal",
+    "farms - Vec<AssetFarmView>": {
+      "farm_id": "FarmId",
+      "rewards - HashMap<TokenId, AssetFarmReward>": {
+        "reward_per_day - <Balance>": "u128",
+        "booster_log_base - <Balance>": "u128",
+        "remaining_rewards - <Balance>": "u128",
+        "boosted_shares - <Balance>": "u128",
+        "reward_per_share": "BigDecimal"
+      }
+    }
+  },
+  "3 - AssetFarm": {
+    "block_timestamp": "Timestamp",
+    "rewards - HashMap<TokenId, AssetFarmReward>": {
+      "reward_per_day - <Balance>": "u128",
+      "booster_log_base - <Balance>": "u128",
+      "remaining_rewards - <Balance>": "u128",
+      "boosted_shares - <Balance>": "u128",
+      "reward_per_share": "BigDecimal"
+    }
+  },
+  "4 - Account": {
+    "account_id": "AccountId",
+    "supplied - UnorderedMap<TokenId, VAccountAsset>": {
+      "shareds": "u128"
+    },
+    "collateral - Vec<CollateralAsset>": {
+      "token_id": "TokenId",
+      "shares": "u128"
+    },
+    "borrowed - Vec<BorrowedAsset>": {
+      "token_id": "TokenId",
+      "shares": "u128"
+    },
+    "farms - UnorderedMap<FarmId, VAccountFarm>": {
+      "block_timestamp": "Timestamp",
+      "rewards - HashMap<TokenId, AssetFarmReward>": {
+        "reward_per_day - <Balance>": "u128",
+        "booster_log_base - <Balance>": "u128",
+        "remaining_rewards - <Balance>": "u128",
+        "boosted_shares - <Balance>": "u128",
+        "reward_per_share": "BigDecimal"
+      }
+    },
+    "affected_farms - Vec<FarmId>": "FarmId",
+    "storage_tracker - StorageTracker>": {
+      "bytes_added - StorageUsage": "u64",
+      "bytes_released - StorageUsage": "u64",
+      "initial_storage_usage - Option<StorageUsage>": "u64"
+    },
+    "booster_staking - Option<BoosterStaking>": {
+      "staked_booster_amount": "Balance",
+      "x_booster_amount": "Balance",
+      "unlock_timestamp": "u64"
+    }
+  },
+  "5 - AccountDetailed": {
+    "account_id": "AccountId",
+    "supplied - Vec<AssetView>": {
+      "token_id": "TokenId",
+      "shares": "u128",
+      "apr": "BigDecimal"
+    },
+    "collateral - Vec<AssetView>": {
+      "token_id": "TokenId",
+      "shares": "u128",
+      "apr": "BigDecimal"
+    },
+    "borrowed - Vec<AssetView>": {
+      "token_id": "TokenId",
+      "shares": "u128",
+      "apr": "BigDecimal"
+    },
+    "farms - Vec<AccountFarmView>": {
+      "farm_id": "FarmId",
+      "rewards - HashMap<TokenId, AssetFarmReward>": {
+        "reward_per_day - <Balance>": "u128",
+        "booster_log_base - <Balance>": "u128",
+        "remaining_rewards - <Balance>": "u128",
+        "boosted_shares - <Balance>": "u128",
+        "reward_per_share": "BigDecimal"
+      }
+    },
+    "has_non_farmed_assets": "bool",
+    "booster_staking - Option<BoosterStaking>": {
+      "staked_booster_amount": "Balance",
+      "x_booster_amount": "Balance",
+      "unlock_timestamp": "u64"
+    }
+  }
+}

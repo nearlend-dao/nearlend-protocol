@@ -35,6 +35,12 @@ impl From<Storage> for VStorage {
     }
 }
 
+impl Default for Storage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Storage {
     pub fn new() -> Self {
         Self {
@@ -107,9 +113,7 @@ impl StorageManagement for Contract {
         registration_only: Option<bool>,
     ) -> StorageBalance {
         let amount: Balance = env::attached_deposit();
-        let account_id = account_id
-            .map(|a| a.into())
-            .unwrap_or_else(|| env::predecessor_account_id());
+        let account_id = account_id.unwrap_or_else(env::predecessor_account_id);
         let storage = self.internal_get_storage(&account_id);
         let registration_only = registration_only.unwrap_or(false);
         if let Some(mut storage) = storage {
@@ -184,5 +188,20 @@ impl StorageManagement for Contract {
 
     fn storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
         self.internal_storage_balance_of(&account_id)
+    }
+}
+
+#[near_bindgen]
+impl Contract {
+    /// Helper method for debugging storage usage that ignores minimum storage limits.
+    pub fn debug_storage_balance_of(&self, account_id: AccountId) -> Option<StorageBalance> {
+        self.internal_get_storage(&account_id)
+            .map(|storage| StorageBalance {
+                total: storage.storage_balance.into(),
+                available: U128(
+                    storage.storage_balance
+                        - Balance::from(storage.used_bytes) * env::storage_byte_cost(),
+                ),
+            })
     }
 }

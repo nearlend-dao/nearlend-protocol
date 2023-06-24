@@ -48,7 +48,7 @@ CONTRACT_ID="contract.$MAIN"
 
 echo -e "$LG>>>>>>>>>>>>>>$TC Creating and deploying contract account: $CONTRACT_ID $LG<<<<<<<<<<<<<<$NC"
 near create-account $CONTRACT_ID --masterAccount=$MAIN --initialBalance=10
-near deploy $CONTRACT_ID res/burrowland.wasm new '{"config": {
+near deploy $CONTRACT_ID res/nearlend_protocol.wasm new '{"config": {
   "oracle_account_id": "'$ORACLE_ID'",
   "owner_id": "'$OWNER_ID'",
   "booster_token_id": "'$BOOSTER_TOKEN_ID'",

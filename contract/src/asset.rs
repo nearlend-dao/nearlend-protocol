@@ -1,6 +1,7 @@
 use crate::*;
 
 pub const MS_PER_YEAR: u64 = 31536000000;
+pub const MAX_ITEMS: usize = 99999;
 
 static ASSETS: Lazy<Mutex<HashMap<TokenId, Option<Asset>>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
@@ -13,6 +14,7 @@ pub struct Asset {
     pub supplied: Pool,
     /// Total borrowed.
     pub borrowed: Pool,
+    pub nft_supplied: Vec<NftPool>,
     /// The amount reserved for the stability. This amount can also be borrowed and affects
     /// borrowing rate.
     #[serde(with = "u128_dec_format")]
@@ -48,6 +50,7 @@ impl Asset {
         Self {
             supplied: Pool::new(),
             borrowed: Pool::new(),
+            nft_supplied: vec![],
             reserved: 0,
             last_update_timestamp: timestamp,
             config,
@@ -118,6 +121,22 @@ impl Asset {
     pub fn available_amount(&self) -> Balance {
         self.supplied.balance + self.reserved - self.borrowed.balance
     }
+
+    /// Get the NFT owner from asset NFT pool
+    pub fn get_owner_nft(&self, token_id: &NFTTokenId, asset: &Asset) -> Option<AccountId> {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id.clone())
+            .unwrap_or(MAX_ITEMS);
+
+        if index != MAX_ITEMS {
+            let nft_pool = asset.nft_supplied.get(index).unwrap();
+            return Some(nft_pool.owner_id.clone());
+        }
+
+        None
+    }
 }
 
 impl Contract {
@@ -136,6 +155,61 @@ impl Contract {
             cache.insert(token_id.clone(), asset.clone());
             asset
         })
+    }
+
+    pub fn internal_set_nft_asset(
+        &mut self,
+        nft_contract_id: &NFTContractId,
+        owner_id: AccountId,
+        token_id: NFTTokenId,
+        mut asset: Asset,
+    ) {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id)
+            .unwrap_or(MAX_ITEMS);
+
+        let mut deposit_timestamp = env::block_timestamp();
+        if index != MAX_ITEMS {
+            let current_nft = asset.nft_supplied.get(index).expect("Can't find the nft");
+            deposit_timestamp = current_nft.deposit_timestamp;
+            asset.nft_supplied.remove(index);
+        }
+
+        asset.nft_supplied.push(NftPool {
+            owner_id,
+            token_id,
+            deposit_timestamp,
+        });
+
+        ASSETS
+            .lock()
+            .unwrap()
+            .insert(nft_contract_id.clone(), Some(asset.clone()));
+        self.assets.insert(nft_contract_id, &asset.into());
+    }
+
+    pub fn internal_remove_nft_asset(
+        &mut self,
+        nft_contract_id: &NFTContractId,
+        token_id: NFTTokenId,
+        mut asset: Asset,
+    ) {
+        let index = asset
+            .nft_supplied
+            .iter()
+            .position(|x| *x.token_id == token_id)
+            .unwrap_or(MAX_ITEMS);
+        if index != MAX_ITEMS {
+            asset.nft_supplied.remove(index);
+        }
+
+        ASSETS
+            .lock()
+            .unwrap()
+            .insert(nft_contract_id.clone(), Some(asset.clone()));
+        self.assets.insert(nft_contract_id, &asset.into());
     }
 
     pub fn internal_set_asset(&mut self, token_id: &TokenId, mut asset: Asset) {
@@ -186,7 +260,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let key = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&key).unwrap().into();
@@ -204,7 +278,7 @@ impl Contract {
         let keys = self.asset_ids.as_vector();
         let from_index = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(keys.len());
-        (from_index..std::cmp::min(keys.len(), limit))
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
             .map(|index| {
                 let token_id = keys.get(index).unwrap();
                 let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
@@ -212,5 +286,56 @@ impl Contract {
                 self.asset_into_detailed_view(token_id, asset)
             })
             .collect()
+    }
+
+    pub fn get_assets_apr(
+        &self,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<AssetAprViewJSon> {
+        let keys = self.asset_ids.as_vector();
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(keys.len());
+        (from_index..std::cmp::min(keys.len(), from_index + limit))
+            .map(|index| {
+                let token_id = keys.get(index).unwrap();
+                let mut asset: Asset = self.assets.get(&token_id).unwrap().into();
+                asset.update();
+                self.asset_into_apy_view(token_id, asset)
+            })
+            .collect()
+    }
+
+    /// Returns the NFTs from the asset
+    pub fn get_nft_assets_paged(
+        &self,
+        nft_contract_id: NFTContractId,
+        from_index: Option<u64>,
+        limit: Option<u64>,
+    ) -> Vec<NftPool> {
+        let mut nft_asset: Asset = self
+            .assets
+            .get(&nft_contract_id)
+            .expect("Can't get the NFT asset")
+            .into();
+
+        nft_asset.nft_supplied.reverse();
+        let values = nft_asset.nft_supplied;
+        let from_index = from_index.unwrap_or(0);
+        let limit = limit.unwrap_or(values.len() as u64);
+        (from_index..std::cmp::min(values.len() as u64, from_index + limit))
+            .map(|index| values.get(index as usize).unwrap().clone())
+            .collect()
+    }
+
+    /// Returns the number of NFTs
+    pub fn get_num_nfts(&self, nft_contract_id: NFTContractId) -> u32 {
+        let nft_asset: Asset = self
+            .assets
+            .get(&nft_contract_id)
+            .expect("Can't get the NFT asset")
+            .into();
+
+        nft_asset.nft_supplied.len() as _
     }
 }

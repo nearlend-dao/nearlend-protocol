@@ -1,9 +1,11 @@
 mod account;
 mod account_asset;
 mod account_farm;
+mod account_nft_asset;
 mod account_view;
 mod actions;
 mod asset;
+mod asset_apr;
 mod asset_config;
 mod asset_farm;
 mod asset_view;
@@ -13,6 +15,8 @@ mod config;
 mod events;
 mod fungible_token;
 mod legacy;
+mod nft_pool;
+mod non_fungible_token;
 mod pool;
 mod price_receiver;
 mod prices;
@@ -24,9 +28,11 @@ mod utils;
 pub use crate::account::*;
 pub use crate::account_asset::*;
 pub use crate::account_farm::*;
+pub use crate::account_nft_asset::*;
 pub use crate::account_view::*;
 pub use crate::actions::*;
 pub use crate::asset::*;
+pub use crate::asset_apr::*;
 pub use crate::asset_config::*;
 pub use crate::asset_farm::*;
 pub use crate::asset_view::*;
@@ -35,6 +41,8 @@ pub use crate::booster_staking::*;
 pub use crate::config::*;
 pub use crate::fungible_token::*;
 pub use crate::legacy::*;
+pub use crate::nft_pool::*;
+pub use crate::non_fungible_token::*;
 pub use crate::pool::*;
 pub use crate::price_receiver::*;
 pub use crate::prices::*;
@@ -59,14 +67,15 @@ use std::sync::Mutex;
 #[derive(BorshSerialize, BorshStorageKey)]
 enum StorageKey {
     Accounts,
-    AccountAssets { account_id: AccountId },
-    AccountFarms { account_id: AccountId },
+    // AccountAssets { account_id: AccountId },
+    // AccountFarms { account_id: AccountId },
     Storage,
     Assets,
     AssetFarms,
     InactiveAssetFarmRewards { farm_id: FarmId },
     AssetIds,
     Config,
+    // AccountNftAssets { account_id: AccountId },
 }
 
 #[near_bindgen]

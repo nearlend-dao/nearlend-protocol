@@ -25,30 +25,32 @@ fn test_liquidation_alice_by_bob() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.collateral[0].balance, supply_amount);
-    assert_eq!(account.borrowed.len(), 1);
-    assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.borrowed[0].balance, borrow_amount);
-    assert!(account.borrowed[0].apr > BigDecimal::zero());
+    assert_balances(
+        &account.supplied,
+        &[av(tokens.nusdc.account_id(), supply_amount)],
+    );
+    assert_balances(
+        &account.borrowed,
+        &[av(tokens.wnear.account_id(), borrow_amount)],
+    );
+    assert!(find_asset(&account.borrowed, &tokens.wnear.account_id()).apr > BigDecimal::zero());
 
     let bobs_amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.bob, bobs_amount, "")
         .assert_success();
 
     let account = e.get_account(&users.bob);
-    assert_eq!(account.supplied.len(), 1);
-    assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.supplied[0].balance, bobs_amount);
-    assert!(account.supplied[0].apr > BigDecimal::zero());
+    assert_balances(
+        &account.supplied,
+        &[av(tokens.wnear.account_id(), bobs_amount)],
+    );
+    assert!(find_asset(&account.supplied, &tokens.wnear.account_id()).apr > BigDecimal::zero());
 
     // Assuming 2% discount for 5 NEAR at 12$.
     let wnear_amount_in = d(49, 23);
@@ -56,7 +58,7 @@ fn test_liquidation_alice_by_bob() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![asset_amount(&tokens.wnear, wnear_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
     );
@@ -64,26 +66,35 @@ fn test_liquidation_alice_by_bob() {
     // println!("{:#?}", res.logs());
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(
-        account.collateral[0].balance,
-        supply_amount - usdc_amount_out
+    assert_balances(
+        &account.supplied,
+        &[av(
+            tokens.nusdc.account_id(),
+            supply_amount - usdc_amount_out,
+        )],
     );
-    assert_eq!(account.borrowed.len(), 1);
-    assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.borrowed[0].balance, borrow_amount - wnear_amount_in);
-    assert!(account.borrowed[0].apr > BigDecimal::zero());
+    assert_balances(
+        &account.borrowed,
+        &[av(
+            tokens.wnear.account_id(),
+            borrow_amount - wnear_amount_in,
+        )],
+    );
+    assert!(find_asset(&account.borrowed, &tokens.wnear.account_id()).apr > BigDecimal::zero());
 
     let account = e.get_account(&users.bob);
-    assert_eq!(account.supplied.len(), 2);
-    assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.supplied[0].balance, bobs_amount - wnear_amount_in);
-    assert!(account.supplied[0].apr > BigDecimal::zero());
-    assert_eq!(account.supplied[1].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.supplied[1].balance, usdc_amount_out);
-    assert_eq!(account.supplied[1].apr, BigDecimal::zero());
+    assert_balances(
+        &account.supplied,
+        &[
+            av(tokens.wnear.account_id(), bobs_amount - wnear_amount_in),
+            av(tokens.nusdc.account_id(), usdc_amount_out),
+        ],
+    );
+    assert!(find_asset(&account.supplied, &tokens.wnear.account_id()).apr > BigDecimal::zero());
+    assert_eq!(
+        find_asset(&account.supplied, &tokens.nusdc.account_id()).apr,
+        BigDecimal::zero()
+    );
 }
 
 /// Bob attemps to liquidate Alice which decreases health factor.
@@ -105,7 +116,7 @@ fn test_liquidation_decrease_health_factor() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         wnear_borrow_amount,
     )
     .assert_success();
@@ -114,23 +125,25 @@ fn test_liquidation_decrease_health_factor() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.nusdt,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         usdt_borrow_amount,
     )
     .assert_success();
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.collateral[0].balance, supply_amount);
-    assert_eq!(account.borrowed.len(), 2);
-    assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.borrowed[0].balance, wnear_borrow_amount);
-    assert!(account.borrowed[0].apr > BigDecimal::zero());
-    assert_eq!(account.borrowed[1].token_id, tokens.nusdt.account_id());
-    assert_eq!(account.borrowed[1].balance, usdt_borrow_amount);
-    assert!(account.borrowed[1].apr > BigDecimal::zero());
+    assert_balances(
+        &account.supplied,
+        &[av(tokens.nusdc.account_id(), supply_amount)],
+    );
+    assert_balances(
+        &account.borrowed,
+        &[
+            av(tokens.wnear.account_id(), wnear_borrow_amount),
+            av(tokens.nusdt.account_id(), usdt_borrow_amount),
+        ],
+    );
+    assert!(find_asset(&account.borrowed, &tokens.wnear.account_id()).apr > BigDecimal::zero());
+    assert!(find_asset(&account.borrowed, &tokens.nusdt.account_id()).apr > BigDecimal::zero());
 
     let wnear_bobs_amount = d(100, 24);
     e.contract_ft_transfer_call(&tokens.wnear, &users.bob, wnear_bobs_amount, "")
@@ -146,13 +159,15 @@ fn test_liquidation_decrease_health_factor() {
     .assert_success();
 
     let account = e.get_account(&users.bob);
-    assert_eq!(account.supplied.len(), 2);
-    assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
-    assert_eq!(account.supplied[0].balance, wnear_bobs_amount);
-    assert!(account.supplied[0].apr > BigDecimal::zero());
-    assert_eq!(account.supplied[1].token_id, tokens.nusdt.account_id());
-    assert_eq!(account.supplied[1].balance, usdt_bobs_amount);
-    assert!(account.supplied[1].apr > BigDecimal::zero());
+    assert_balances(
+        &account.supplied,
+        &[
+            av(tokens.wnear.account_id(), wnear_bobs_amount),
+            av(tokens.nusdt.account_id(), usdt_bobs_amount),
+        ],
+    );
+    assert!(find_asset(&account.supplied, &tokens.wnear.account_id()).apr > BigDecimal::zero());
+    assert!(find_asset(&account.supplied, &tokens.nusdt.account_id()).apr > BigDecimal::zero());
 
     // Assuming 2% discount for NEAR at 12$. Paying 49 USDT for 50 USDC.
     let usdt_amount_in = d(49, 18);
@@ -160,7 +175,7 @@ fn test_liquidation_decrease_health_factor() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![asset_amount(&tokens.nusdt, usdt_amount_in)],
         vec![asset_amount(&tokens.nusdc, usdc_amount_out)],
     );
@@ -177,7 +192,7 @@ fn test_liquidation_decrease_health_factor() {
     let res = e.liquidate(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
         vec![
             asset_amount(&tokens.wnear, wnear_amount_in),
             asset_amount(&tokens.nusdt, usdt_amount_in),
@@ -192,7 +207,7 @@ fn test_liquidation_decrease_health_factor() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "liquidate");
     assert_eq!(
         value["data"][0]["account_id"].as_str().unwrap(),
@@ -209,39 +224,44 @@ fn test_liquidation_decrease_health_factor() {
     assert_eq!(value["data"][0]["repaid_sum"].as_str().unwrap(), "108.8");
 
     let account = e.get_account(&users.alice);
-    assert!(account.supplied.is_empty());
-    assert_eq!(account.collateral.len(), 1);
-    assert_eq!(account.collateral[0].token_id, tokens.nusdc.account_id());
-    assert_eq!(
-        account.collateral[0].balance,
-        supply_amount - usdc_amount_out
+    assert_balances(
+        &account.supplied,
+        &[av(
+            tokens.nusdc.account_id(),
+            supply_amount - usdc_amount_out,
+        )],
     );
-    assert_eq!(account.borrowed.len(), 1);
-    assert_eq!(account.borrowed[0].token_id, tokens.wnear.account_id());
-    assert_eq!(
-        account.borrowed[0].balance,
-        wnear_borrow_amount - wnear_amount_in
+    assert_balances(
+        &account.borrowed,
+        &[av(
+            tokens.wnear.account_id(),
+            wnear_borrow_amount - wnear_amount_in,
+        )],
     );
-    assert!(account.borrowed[0].apr > BigDecimal::zero());
+    assert!(find_asset(&account.borrowed, &tokens.wnear.account_id()).apr > BigDecimal::zero());
 
     let account = e.get_account(&users.bob);
-    assert_eq!(account.supplied.len(), 3);
-    assert_eq!(account.supplied[0].token_id, tokens.wnear.account_id());
-    assert_eq!(
-        account.supplied[0].balance,
-        wnear_bobs_amount - wnear_amount_in
+    assert_balances(
+        &account.supplied,
+        &[
+            av(
+                tokens.wnear.account_id(),
+                wnear_bobs_amount - wnear_amount_in,
+            ),
+            av(tokens.nusdt.account_id(), usdt_bobs_amount - usdt_amount_in),
+            av(tokens.nusdc.account_id(), usdc_amount_out),
+        ],
     );
-    assert!(account.supplied[0].apr > BigDecimal::zero());
-    assert_eq!(account.supplied[1].token_id, tokens.nusdt.account_id());
+    assert!(find_asset(&account.supplied, &tokens.wnear.account_id()).apr > BigDecimal::zero());
+    // Now APR should be 0, since Bob has liquidated the entire USDT amount
     assert_eq!(
-        account.supplied[1].balance,
-        usdt_bobs_amount - usdt_amount_in
+        find_asset(&account.supplied, &tokens.nusdt.account_id()).apr,
+        BigDecimal::zero()
     );
-    // Not APR should be 0, since Bob has liquidated the entire USDT amount
-    assert_eq!(account.supplied[1].apr, BigDecimal::zero());
-    assert_eq!(account.supplied[2].token_id, tokens.nusdc.account_id());
-    assert_eq!(account.supplied[2].balance, usdc_amount_out);
-    assert_eq!(account.supplied[2].apr, BigDecimal::zero());
+    assert_eq!(
+        find_asset(&account.supplied, &tokens.nusdc.account_id()).apr,
+        BigDecimal::zero()
+    );
 }
 
 /// Force closing the account with bad debt.
@@ -263,7 +283,7 @@ fn test_force_close() {
     e.borrow_and_withdraw(
         &users.alice,
         &tokens.wnear,
-        price_data(&tokens, Some(100000), None),
+        price_data(&tokens, Some(100000), None, None),
         borrow_amount,
     )
     .assert_success();
@@ -278,7 +298,7 @@ fn test_force_close() {
     let res = e.force_close(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(120000), None),
+        price_data(&tokens, Some(120000), None, None),
     );
     let err = match res.status() {
         ExecutionStatus::Failure(e) => e.to_string(),
@@ -290,7 +310,7 @@ fn test_force_close() {
     let res = e.force_close(
         &users.bob,
         &users.alice,
-        price_data(&tokens, Some(250000), None),
+        price_data(&tokens, Some(250000), None, None),
     );
     res.assert_success();
     let logs = get_logs(&e.near.borrow_runtime());
@@ -299,7 +319,7 @@ fn test_force_close() {
 
     let value: serde_json::Value =
         serde_json::from_str(&event[EVENT_JSON.len()..]).expect("Failed to parse the event");
-    assert_eq!(value["standard"].as_str().unwrap(), "burrow");
+    assert_eq!(value["standard"].as_str().unwrap(), "nearlend");
     assert_eq!(value["event"].as_str().unwrap(), "force_close");
     assert_eq!(
         value["data"][0]["liquidation_account_id"].as_str().unwrap(),
@@ -313,7 +333,6 @@ fn test_force_close() {
 
     let account = e.get_account(&users.alice);
     assert!(account.supplied.is_empty());
-    assert!(account.collateral.is_empty());
     assert!(account.borrowed.is_empty());
 
     let asset = e.get_asset(&tokens.nusdc);

@@ -2,55 +2,59 @@
 
 use common::{AssetOptionalPrice, DurationSec, Price, PriceData, ONE_YOCTO};
 use near_contract_standards::fungible_token::metadata::{FungibleTokenMetadata, FT_METADATA_SPEC};
+use near_contract_standards::storage_management::StorageBalance;
 use near_sdk::json_types::U128;
 use near_sdk::serde_json::json;
 use near_sdk::{env, serde_json, AccountId, Balance, Gas, Timestamp};
 use near_sdk_sim::runtime::GenesisConfig;
 use near_sdk_sim::{
-    deploy, init_simulator, to_yocto, ContractAccount, ExecutionResult, UserAccount,
+    deploy, init_simulator, to_yocto, ContractAccount, ExecutionResult, UserAccount, STORAGE_AMOUNT,
 };
 
-use contract::FarmId;
 pub use contract::{
     AccountDetailedView, Action, AssetAmount, AssetConfig, AssetDetailedView, Config,
-    ContractContract as BurrowlandContract, PriceReceiverMsg, TokenReceiverMsg,
+    ContractContract as NearlendContract, PriceReceiverMsg, TokenReceiverMsg,
 };
+use contract::{AssetFarmView, AssetView, FarmId, NFTAsset};
 use near_sdk_sim::runtime::RuntimeStandalone;
 use test_oracle::ContractContract as OracleContract;
 
+use near_contract_standards::non_fungible_token::metadata::TokenMetadata;
+
 near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
-    BURROWLAND_WASM_BYTES => "res/burrowland.wasm",
-    BURROWLAND_0_3_0_WASM_BYTES => "res/burrowland_0.3.0.wasm",
-    BURROWLAND_0_4_0_WASM_BYTES => "res/burrowland_0.4.0.wasm",
-    BURROWLAND_PREVIOUS_WASM_BYTES => "res/burrowland_0.5.1.wasm",
+    NEARLEND_WASM_BYTES => "res/nearlend_protocol.wasm",
+    NEARLEND_0_3_0_WASM_BYTES => "res/nearlend_protocol_0.3.0.wasm",
+    NEARLEND_0_4_0_WASM_BYTES => "res/nearlend_protocol_0.4.0.wasm",
+    NEARLEND_PREVIOUS_WASM_BYTES => "res/nearlend_protocol_0.5.1.wasm",
     TEST_ORACLE_WASM_BYTES => "res/test_oracle.wasm",
-
     FUNGIBLE_TOKEN_WASM_BYTES => "res/fungible_token.wasm",
+    NON_FUNGIBLE_TOKEN_WASM_BYTES => "res/nft.wasm",
 }
 
-pub fn burrowland_0_3_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_3_0_WASM_BYTES
+pub fn nearlend_0_3_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_3_0_WASM_BYTES
 }
 
-pub fn burrowland_0_4_0_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_0_4_0_WASM_BYTES
+pub fn nearlend_0_4_0_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_0_4_0_WASM_BYTES
 }
 
-pub fn burrowland_previous_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_PREVIOUS_WASM_BYTES
+pub fn nearlend_previous_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_PREVIOUS_WASM_BYTES
 }
 
-pub fn burrowland_wasm_bytes() -> &'static [u8] {
-    &BURROWLAND_WASM_BYTES
+pub fn nearlend_wasm_bytes() -> &'static [u8] {
+    &NEARLEND_WASM_BYTES
 }
 
 pub const NEAR: &str = "near";
 pub const ORACLE_ID: &str = "oracle.near";
-pub const BURROWLAND_ID: &str = "burrowland.near";
-pub const BOOSTER_TOKEN_ID: &str = "token.burrowland.near";
+pub const NEARLEND_ID: &str = "nearlend.near";
+pub const BOOSTER_TOKEN_ID: &str = "ft.nearlend.near";
 pub const OWNER_ID: &str = "owner.near";
+pub const NFT_ID: &str = "nft-nearlend.near";
 
-pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 15);
+pub const DEFAULT_GAS: Gas = Gas(Gas::ONE_TERA.0 * 100);
 pub const MAX_GAS: Gas = Gas(Gas::ONE_TERA.0 * 300);
 pub const BOOSTER_TOKEN_DECIMALS: u8 = 18;
 pub const BOOSTER_TOKEN_TOTAL_SUPPLY: Balance =
@@ -64,15 +68,19 @@ pub const ONE_DAY_SEC: DurationSec = 24 * 60 * 60;
 pub const MIN_DURATION_SEC: DurationSec = 2678400;
 pub const MAX_DURATION_SEC: DurationSec = 31536000;
 
+pub const MINT_STORAGE_COST: u128 = 11280000000000000000000;
+
 pub struct Env {
     pub root: UserAccount,
     pub near: UserAccount,
     pub owner: UserAccount,
     pub oracle: ContractAccount<OracleContract>,
-    pub contract: ContractAccount<BurrowlandContract>,
+    pub contract: ContractAccount<NearlendContract>,
     pub booster_token: UserAccount,
+    pub nft_contract: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Tokens {
     pub wnear: UserAccount,
     pub neth: UserAccount,
@@ -81,6 +89,7 @@ pub struct Tokens {
     pub nusdc: UserAccount,
 }
 
+#[derive(Debug)]
 pub struct Users {
     pub alice: UserAccount,
     pub bob: UserAccount,
@@ -88,6 +97,10 @@ pub struct Users {
     pub dude: UserAccount,
     pub eve: UserAccount,
 }
+
+pub type NFTContractId = AccountId;
+pub type NFTTokenId = String;
+pub type NFTContractTokenId = String;
 
 pub fn storage_deposit(
     user: &UserAccount,
@@ -146,9 +159,9 @@ impl Env {
         );
 
         let contract = deploy!(
-            contract: BurrowlandContract,
-            contract_id: BURROWLAND_ID.to_string(),
-            bytes: &contract_bytes,
+            contract: NearlendContract,
+            contract_id: NEARLEND_ID.to_string(),
+            bytes: contract_bytes,
             signer_account: near,
             deposit: to_yocto("20"),
             gas: DEFAULT_GAS.0,
@@ -192,7 +205,28 @@ impl Env {
             DEFAULT_GAS.0,
         );
 
-        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(BURROWLAND_ID));
+        ft_storage_deposit(&owner, &a(BOOSTER_TOKEN_ID), &a(NEARLEND_ID));
+
+        // Deploy NFT contract
+        let nft_account_id = AccountId::new_unchecked(NFT_ID.to_string());
+        let nft_contract = near.deploy(
+            &NON_FUNGIBLE_TOKEN_WASM_BYTES,
+            nft_account_id.clone(),
+            STORAGE_AMOUNT,
+        );
+
+        // Init NFT contract
+        nft_contract.call(
+            nft_account_id,
+            "new_default_meta",
+            &json!({
+                "owner_id": owner.account_id(),
+            })
+            .to_string()
+            .into_bytes(),
+            DEFAULT_GAS.0,
+            0,
+        );
 
         Self {
             root,
@@ -201,17 +235,18 @@ impl Env {
             contract,
             oracle,
             booster_token,
+            nft_contract,
         }
     }
 
     pub fn init() -> Self {
-        Self::init_with_contract(&BURROWLAND_WASM_BYTES)
+        Self::init_with_contract(&NEARLEND_WASM_BYTES)
     }
 
     pub fn deploy_contract_by_key(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.contract
             .user_account
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .deploy_contract(contract_bytes.to_vec())
             .function_call(
                 "migrate_state".to_string(),
@@ -224,9 +259,19 @@ impl Env {
 
     pub fn deploy_contract_by_owner(&self, contract_bytes: &[u8]) -> ExecutionResult {
         self.owner
-            .create_transaction(a(BURROWLAND_ID))
+            .create_transaction(a(NEARLEND_ID))
             .function_call("upgrade".to_string(), contract_bytes.to_vec(), MAX_GAS.0, 0)
             .submit()
+    }
+
+    pub fn update_asset(&self, token_id: AccountId, asset_config: AssetConfig) {
+        self.owner
+            .function_call(
+                self.contract.contract.update_asset(token_id, asset_config),
+                DEFAULT_GAS.0,
+                ONE_YOCTO,
+            )
+            .assert_success()
     }
 
     pub fn setup_assets(&self, tokens: &Tokens) {
@@ -361,6 +406,28 @@ impl Env {
                 ONE_YOCTO,
             )
             .assert_success();
+
+        self.owner
+            .function_call(
+                self.contract.contract.add_asset(
+                    self.nft_contract.account_id(),
+                    AssetConfig {
+                        reserve_ratio: 2500,
+                        target_utilization: 8000,
+                        target_utilization_rate: U128(0),
+                        max_utilization_rate: U128(0),
+                        volatility_ratio: 3000,
+                        extra_decimals: 0,
+                        can_deposit: true,
+                        can_withdraw: true,
+                        can_use_as_collateral: true,
+                        can_borrow: false,
+                    },
+                ),
+                DEFAULT_GAS.0,
+                ONE_YOCTO,
+            )
+            .assert_success();
     }
 
     pub fn deposit_reserves(&self, tokens: &Tokens) {
@@ -377,7 +444,7 @@ impl Env {
         self.contract_ft_transfer_call(
             &self.booster_token,
             &self.owner,
-            d(10000, 18),
+            d(10000, BOOSTER_TOKEN_DECIMALS),
             DEPOSIT_TO_RESERVE,
         );
     }
@@ -404,6 +471,30 @@ impl Env {
         )
     }
 
+    pub fn contract_nft_transfer_call(
+        &self,
+        user: &UserAccount,
+        nft_contract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+        msg: &str,
+    ) -> ExecutionResult {
+        user.call(
+            nft_contract_id,
+            "nft_transfer_call",
+            &json!({
+                "token_id": nft_token_id,
+                "receiver_id": self.contract.user_account.account_id(),
+                "approval_id": 0,
+                "memo": "memo",
+                "msg": msg,
+            })
+            .to_string()
+            .into_bytes(),
+            MAX_GAS.0,
+            1,
+        )
+    }
+
     pub fn mint_ft(&self, token: &UserAccount, receiver: &UserAccount, amount: Balance) {
         self.owner
             .call(
@@ -421,6 +512,57 @@ impl Env {
             .assert_success();
     }
 
+    pub fn get_balance(&self, token: &UserAccount, account: &UserAccount) -> U128 {
+        let balance: U128 = account
+            .view(
+                token.account_id.clone(),
+                "ft_balance_of",
+                &json!({
+                    "account_id": account.account_id(),
+                })
+                .to_string()
+                .into_bytes(),
+            )
+            .unwrap_json();
+        balance
+    }
+
+    fn sample_token_metadata(&self) -> TokenMetadata {
+        TokenMetadata {
+            title: Some("Olympus Mons".into()),
+            description: Some("The tallest mountain in the charted solar system".into()),
+            media: None,
+            media_hash: None,
+            copies: Some(1u64),
+            issued_at: None,
+            expires_at: None,
+            starts_at: None,
+            updated_at: None,
+            extra: None,
+            reference: None,
+            reference_hash: None,
+        }
+    }
+
+    pub fn mint_nft(&self, receiver: &UserAccount, token_id: NFTTokenId) {
+        self.owner
+            .call(
+                self.nft_contract.account_id.clone(),
+                "nft_mint",
+                &json!({
+                    "token_id": token_id,
+                    "token_owner_id": receiver.account_id(),
+                    "receiver_id": receiver.account_id(),
+                    "token_metadata": self.sample_token_metadata(),
+                })
+                .to_string()
+                .into_bytes(),
+                DEFAULT_GAS.0,
+                MINT_STORAGE_COST,
+            )
+            .assert_success();
+    }
+
     pub fn mint_tokens(&self, tokens: &Tokens, user: &UserAccount) {
         ft_storage_deposit(user, &tokens.wnear.account_id(), &user.account_id());
         ft_storage_deposit(user, &tokens.neth.account_id(), &user.account_id());
@@ -429,13 +571,13 @@ impl Env {
         ft_storage_deposit(user, &tokens.nusdc.account_id(), &user.account_id());
         ft_storage_deposit(user, &self.booster_token.account_id(), &user.account_id());
 
-        let amount = 1000000;
+        let amount = 1_000_000;
         self.mint_ft(&tokens.wnear, user, d(amount, 24));
         self.mint_ft(&tokens.neth, user, d(amount, 18));
         self.mint_ft(&tokens.ndai, user, d(amount, 18));
         self.mint_ft(&tokens.nusdt, user, d(amount, 6));
         self.mint_ft(&tokens.nusdc, user, d(amount, 6));
-        self.mint_ft(&self.booster_token, user, d(amount, 18));
+        self.mint_ft(&self.booster_token, user, d(amount, BOOSTER_TOKEN_DECIMALS));
     }
 
     pub fn get_asset(&self, token: &UserAccount) -> AssetDetailedView {
@@ -446,6 +588,18 @@ impl Env {
         asset.unwrap()
     }
 
+    pub fn get_asset_farm(&self, farm_id: FarmId) -> AssetFarmView {
+        let asset_farm: Option<serde_json::value::Value> = self
+            .near
+            .view_method_call(self.contract.contract.get_asset_farm(farm_id.clone()))
+            .unwrap_json();
+        let asset_farm = asset_farm.unwrap();
+        AssetFarmView {
+            farm_id,
+            rewards: serde_json::from_value(asset_farm["rewards"].clone()).unwrap(),
+        }
+    }
+
     pub fn get_account(&self, user: &UserAccount) -> AccountDetailedView {
         let account: Option<AccountDetailedView> = self
             .near
@@ -454,25 +608,51 @@ impl Env {
         account.unwrap()
     }
 
+    pub fn storage_balance_of(&self, user: &UserAccount) -> Option<StorageBalance> {
+        self.near
+            .view_method_call(self.contract.contract.storage_balance_of(user.account_id()))
+            .unwrap_json()
+    }
+
+    pub fn debug_storage_balance_of(&self, user: &UserAccount) -> Option<StorageBalance> {
+        self.near
+            .view_method_call(
+                self.contract
+                    .contract
+                    .debug_storage_balance_of(user.account_id()),
+            )
+            .unwrap_json()
+    }
+
     pub fn supply_to_collateral(
         &self,
         user: &UserAccount,
         token: &UserAccount,
         amount: Balance,
     ) -> ExecutionResult {
-        self.contract_ft_transfer_call(
-            &token,
-            &user,
-            amount,
-            &serde_json::to_string(&TokenReceiverMsg::Execute {
-                actions: vec![Action::IncreaseCollateral(AssetAmount {
-                    token_id: token.account_id(),
-                    amount: None,
-                    max_amount: None,
-                })],
-            })
-            .unwrap(),
-        )
+        self.contract_ft_transfer_call(token, user, amount, "")
+    }
+
+    pub fn supply_nft_to_collateral(
+        &self,
+        user: &UserAccount,
+        nft_contract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.contract_nft_transfer_call(user, nft_contract_id, nft_token_id, "")
+    }
+
+    pub fn deposit_and_repay(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        amount: Balance,
+    ) -> ExecutionResult {
+        let msg = serde_json::to_string(&TokenReceiverMsg::Execute {
+            actions: vec![Action::Repay(asset_amount(token, amount))],
+        })
+        .unwrap();
+        self.contract_ft_transfer_call(token, user, amount, &msg)
     }
 
     pub fn oracle_call(
@@ -500,10 +680,45 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Borrow(asset_amount(token, amount))],
+            },
+        )
+    }
+
+    pub fn withdraw(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        price_data: PriceData,
+        amount: Balance,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::Withdraw(asset_amount(token, amount))],
+            },
+        )
+    }
+
+    pub fn withdraw_nft(
+        &self,
+        user: &UserAccount,
+        price_data: PriceData,
+        nft_conntract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::WithdrawNFT(nft_asset(
+                    nft_conntract_id,
+                    nft_token_id,
+                ))],
             },
         )
     }
@@ -516,12 +731,34 @@ impl Env {
         amount: Balance,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![
                     Action::Borrow(asset_amount(token, amount)),
                     Action::Withdraw(asset_amount(token, amount)),
+                ],
+            },
+        )
+    }
+
+    pub fn borrow_and_withdraw_nft(
+        &self,
+        user: &UserAccount,
+        token: &UserAccount,
+        price_data: PriceData,
+        amount: Balance,
+        nft_conntract_id: NFTContractId,
+        nft_token_id: NFTTokenId,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![
+                    Action::Borrow(asset_amount(token, amount)),
+                    Action::Withdraw(asset_amount(token, amount)),
+                    Action::WithdrawNFT(nft_asset(nft_conntract_id, nft_token_id)),
                 ],
             },
         )
@@ -536,13 +773,34 @@ impl Env {
         out_assets: Vec<AssetAmount>,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::Liquidate {
                     account_id: liquidation_user.account_id(),
                     in_assets,
                     out_assets,
+                }],
+            },
+        )
+    }
+
+    pub fn liquidate_nft(
+        &self,
+        user: &UserAccount,
+        liquidation_user: &UserAccount,
+        price_data: PriceData,
+        in_assets: Vec<AssetAmount>,
+        out_nft_assets: Vec<NFTAsset>,
+    ) -> ExecutionResult {
+        self.oracle_call(
+            user,
+            price_data,
+            PriceReceiverMsg::Execute {
+                actions: vec![Action::LiquidateNFT {
+                    account_id: liquidation_user.account_id(),
+                    in_assets,
+                    out_nft_assets,
                 }],
             },
         )
@@ -555,7 +813,7 @@ impl Env {
         price_data: PriceData,
     ) -> ExecutionResult {
         self.oracle_call(
-            &user,
+            user,
             price_data,
             PriceReceiverMsg::Execute {
                 actions: vec![Action::ForceClose {
@@ -617,7 +875,21 @@ impl Env {
 
     pub fn account_farm_claim_all(&self, user: &UserAccount) -> ExecutionResult {
         user.function_call(
-            self.contract.contract.account_farm_claim_all(),
+            self.contract.contract.account_farm_claim_all(None),
+            MAX_GAS.0,
+            0,
+        )
+    }
+
+    pub fn account_farm_claim_all_on_behalf(
+        &self,
+        caller: &UserAccount,
+        user: &UserAccount,
+    ) -> ExecutionResult {
+        caller.function_call(
+            self.contract
+                .contract
+                .account_farm_claim_all(Some(user.account_id())),
             MAX_GAS.0,
             0,
         )
@@ -639,7 +911,7 @@ pub fn init_token(e: &Env, token_account_id: &AccountId, decimals: u8) -> UserAc
                 icon: None,
                 reference: None,
                 reference_hash: None,
-                decimals: decimals,
+                decimals,
             }
         })
         .to_string()
@@ -687,6 +959,7 @@ pub fn price_data(
     tokens: &Tokens,
     wnear_mul: Option<Balance>,
     neth_mul: Option<Balance>,
+    nft_mul: Option<Balance>,
 ) -> PriceData {
     let mut prices = vec![
         AssetOptionalPrice {
@@ -729,6 +1002,16 @@ pub fn price_data(
             }),
         })
     }
+    if let Some(nft_mul) = nft_mul {
+        prices.push(AssetOptionalPrice {
+            asset_id: NFT_ID.to_string(),
+            price: Some(Price {
+                multiplier: nft_mul,
+                decimals: 28,
+            }),
+        })
+    }
+
     PriceData {
         timestamp: tokens.wnear.borrow_runtime().cur_block.block_timestamp,
         recency_duration_sec: 90,
@@ -757,12 +1040,19 @@ pub fn basic_setup_with_contract(contract_bytes: &[u8]) -> (Env, Tokens, Users) 
         &users.bob.account_id(),
         d(1, 23),
     );
+    e.mint_tokens(&tokens, &users.charlie);
+    storage_deposit(
+        &users.charlie,
+        &e.contract.account_id(),
+        &users.charlie.account_id(),
+        d(1, 23),
+    );
 
     (e, tokens, users)
 }
 
 pub fn basic_setup() -> (Env, Tokens, Users) {
-    basic_setup_with_contract(&BURROWLAND_WASM_BYTES)
+    basic_setup_with_contract(&NEARLEND_WASM_BYTES)
 }
 
 pub fn sec_to_nano(sec: u32) -> u64 {
@@ -777,6 +1067,13 @@ pub fn asset_amount(token: &UserAccount, amount: Balance) -> AssetAmount {
     }
 }
 
+pub fn nft_asset(nft_contract_id: NFTContractId, token_id: NFTTokenId) -> NFTAsset {
+    NFTAsset {
+        nft_contract_id,
+        token_id,
+    }
+}
+
 pub const EVENT_JSON: &str = "EVENT_JSON:";
 
 pub fn get_logs(runtime: &RuntimeStandalone) -> Vec<String> {
@@ -785,4 +1082,40 @@ pub fn get_logs(runtime: &RuntimeStandalone) -> Vec<String> {
         .iter()
         .flat_map(|hash| runtime.outcome(hash).map(|o| o.logs).unwrap_or_default())
         .collect()
+}
+
+pub fn find_asset<'a>(assets: &'a [AssetView], token_id: &AccountId) -> &'a AssetView {
+    let msg = format!("Missing asset: {:?}", token_id);
+    assets
+        .iter()
+        .find(|e| &e.token_id == token_id)
+        .unwrap_or_else(|| panic!("{}", msg))
+}
+
+pub fn assert_balances(actual: &[AssetView], expected: &[AssetView]) {
+    assert_eq!(actual.len(), expected.len());
+    for asset in actual {
+        assert_eq!(asset.balance, find_asset(expected, &asset.token_id).balance);
+    }
+}
+
+pub fn av(token_id: AccountId, balance: Balance) -> AssetView {
+    AssetView {
+        token_id,
+        balance,
+        shares: U128(0),
+        apr: Default::default(),
+    }
+}
+
+pub fn almost_eq(a: u128, b: u128, prec: u32) {
+    let p = 10u128.pow(27 - prec);
+    let ap = (a + p / 2) / p;
+    let bp = (b + p / 2) / p;
+    assert_eq!(
+        ap,
+        bp,
+        "{}",
+        format!("Expected {} to eq {}, with precision {}", a, b, prec)
+    );
 }
